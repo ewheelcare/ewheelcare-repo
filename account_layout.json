@@ -1,0 +1,17 @@
+[
+{
+    "field": "account.account_id",
+    "ref" : "account"
+  },
+  {
+    "field": "account.account_name",
+    "ref" : "account"
+  },
+   
+ 
+  {
+    "field": "paytype.paytype_name",
+    "ref" : "paytype",
+	"condition":"account.paytype_id=paytype.paytype_id"
+  }
+]

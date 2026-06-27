@@ -1,0 +1,11 @@
+[
+{
+    "field": "make.make_id",
+    "ref" : "make"
+  },
+  {
+    "field": "make.make_name",
+    "ref" : "make"
+  }
+
+]

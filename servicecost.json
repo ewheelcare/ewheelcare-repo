@@ -1,0 +1,9 @@
+{
+"entity":"servicecost",
+"fields":[
+{"name":"cost","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"service_id","type":"alphanumeric","check":"","refers_to":{"entity":"service","field":"service_id"},"formula":"","dependent":""},
+{"name":"make_id","type":"alphanumeric","check":"","refers_to":{"entity":"make","field":"make_id"},"formula":"","dependent":""},
+{"name":"model_id","type":"alphanumeric","check":"","refers_to":{"entity":"model","field":"model_id"},"formula":"","dependent":""}
+]
+}

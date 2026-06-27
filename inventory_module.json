@@ -1,0 +1,33 @@
+[
+  {
+    "field": "Item",
+    "Save_to": "inventory.item_id",
+    "processing": "",
+    "mode": "select",
+    "regex": "",
+    "input_src": {
+      "refers_to": "item",
+      "condition": "",
+      "display": ["item_name"]
+    }
+  },
+   {
+    "field": "Shop",
+    "Save_to": "inventory.shop_id",
+    "processing": "",
+    "mode": "select",
+    "regex": "",
+    "input_src": {
+      "refers_to": "shop",
+      "condition": "",
+      "display": ["shop_name"]
+    }
+  },
+   {
+    "field": "Quantity",
+    "Save_to": "inventory.qty",
+    "processing": "",
+    "mode": "input",
+    "regex": "[0-9]+"
+  }
+]

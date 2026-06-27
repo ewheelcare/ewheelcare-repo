@@ -1,0 +1,7 @@
+{
+"entity":"account",
+"fields":[
+{"name":"account_name","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"paytype_id","type":"alphanumeric","check":"","refers_to":{"entity":"paytype","field":"paytype_id"},"formula":"","dependent":""}
+]
+}

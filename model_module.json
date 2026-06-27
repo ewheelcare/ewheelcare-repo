@@ -1,0 +1,23 @@
+[ 
+  {
+    "field": "Make",
+    "Save_to": "model.make_id",
+    "processing": "",
+    "mode": "select",
+    "regex": "",
+    "input_src": {
+      "refers_to": "make",
+      "condition": "",
+      "display": ["make_name"]
+    }
+  },
+	{
+    "field": "Name",
+    "Save_to": "model.model_name",
+    "processing": "",
+    "mode": "input",
+    "regex": "[a-zA-Z0-9 @]+"
+  }
+  
+   
+]

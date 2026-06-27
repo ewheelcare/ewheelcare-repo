@@ -1,0 +1,7 @@
+<?php 
+include "db_config.php";
+$trans_id=$_POST["value"];
+$sql="update  receipt_trans set active_status='D' WHERE  trans_id='".$trans_id."'";
+$result = $conn->query($sql);
+
+?>

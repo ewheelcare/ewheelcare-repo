@@ -1,0 +1,77 @@
+[
+  {
+    "field": "Name",
+    "Save_to": "item.item_name",
+    "processing": "",
+    "mode": "input",
+    "regex": "[a-zA-Z0-9 ]+"
+  },
+  {
+    "field": "Description",
+    "Save_to": "item.item_description",
+    "processing": "",
+    "mode": "input",
+    "regex": "[a-zA-Z0-9 ]+"
+  },
+  {
+    "field": "Cost",
+    "Save_to": "item.cost",
+    "processing": "",
+    "mode": "input",
+    "regex": "[0-9.]+"
+  },
+  {
+    "field": "Tax CGST(%)",
+    "Save_to": "item.tax_pc",
+    "processing": "",
+    "mode": "input",
+    "regex": "\\d{2}"
+  },
+  {
+    "field": "Tax SGST(%)",
+    "Save_to": "item.tax_pc_sgst",
+    "processing": "",
+    "mode": "input",
+    "regex": "\\d{2}"
+  },
+   {
+    "field": "HSN",
+    "Save_to": "item.hsn",
+    "processing": "",
+    "mode": "input",
+    "regex": "[a-zA-Z ]+"
+  },
+  {
+    "field": "Tyre",
+    "Save_to": "item.tyre_type_name",
+    "processing": "",
+    "mode": "select",
+    "regex": "",
+    "input_src": {
+      "refers_to": "tyre_type",
+      "condition": "",
+      "display": ["tyre_type_name"]
+    }
+  },
+   {
+    "field": "price_dit",
+    "Save_to": "item.price_edit",
+    "processing": "",
+    "mode": "input",
+    "regex": "[a-zA-Z ]+"
+  },
+	 {
+    "field": "Purchase Tax CGST(%)",
+    "Save_to": "item.purchase_tax_cgst",
+    "processing": "",
+    "mode": "input",
+    "regex": "\\d{2}"
+  },
+  {
+    "field": "Purchase Tax IGST(%)",
+    "Save_to": "item.purchase_tax_Igst",
+    "processing": "",
+    "mode": "input",
+    "regex": "\\d{2}"
+  }
+]

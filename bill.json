@@ -1,0 +1,14 @@
+{
+"entity":"bill",
+"fields":[
+{"name":"company_name","type":"alphanumeric","check":"","refers_to":{"entity":"customer","field":"company_name"}},
+{"name":"company_address","type":"alphanumeric","check":"","refers_to":{"entity":"customer","field":"company_address"}},
+{"name":"owner_name","type":"alphanumeric","check":"","refers_to":{"entity":"customer","field":"owner_name"}},
+{"name":"customer_id","type":"alphanumeric","check":"","refers_to":{"entity":"customer","field":"customer_id"}},
+{"name":"bill_date","type":"date"},
+{"name":"bill_amount","type":"alphanumeric"},
+{"name":"gst","type":"alphanumeric"},
+{"name":"discount","type":"alphanumeric"},
+{"name":"total","type":"alphanumeric"},
+]
+}

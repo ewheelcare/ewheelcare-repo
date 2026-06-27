@@ -1,0 +1,49 @@
+[
+  {
+    "field": "Date(dd-mm-yyyy)",
+    "Save_to": "expenditure.date",
+    "processing": "",
+    "mode": "date",
+    "regex": "[a-zA-Z0-9-]+"
+  },
+  
+  {
+    "field": "Amount",
+    "Save_to": "expenditure.amount",
+    "processing": "",
+    "mode": "input",
+    "regex": "[0-9.]+"
+  },
+  {
+    "field": "Mode of Pyment",
+    "Save_to": "expenditure.paytype_id",
+    "processing": "",
+    "mode": "select",
+    "regex": "",
+    "input_src": {
+      "refers_to": "paytype",
+     
+		  "condition":  "paytype.paytype_id=1000003 or paytype.paytype_id=1000002",
+      "display": ["paytype_name"]
+    }
+  },
+  {
+    "field": "Shop",
+    "Save_to": "expenditure.shop_id",
+    "processing": "",
+    "mode": "select",
+    "regex": "",
+    "input_src": {
+      "refers_to": "shop",
+      "condition": "",
+      "display": ["shop_name"]
+    }
+  },
+   {
+    "field": "Description",
+    "Save_to": "expenditure.description",
+    "processing": "",
+    "mode": "input",
+    "regex": "[a-zA-Z0-9-, ]+"
+  }
+]

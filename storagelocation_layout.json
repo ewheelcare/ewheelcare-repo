@@ -1,0 +1,13 @@
+[
+{
+    "field": "storagelocation.storagelocation_name",
+    "ref" : "storagelocation"
+  },
+
+  {
+    "field": "shop.shop_name",
+    "ref" : "shop",
+	"condition":"shop.shop_id=storagelocation.shop_id"
+  }
+  
+]

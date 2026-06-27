@@ -1,0 +1,30 @@
+[
+{
+    "field": "vehicle.vehicle_id",
+    "ref" : "vehicle"
+  },
+  {
+    "field": "vehicle.vehicle_no",
+    "ref" : "vehicle"
+  },
+  {
+    "field": "vehicle.vehicle_brand",
+    "ref" : "make",
+	"condition":"make.make_name=vehicle.vehicle_brand"
+  },
+  {
+    "field": "vehicle.vehicle_model",
+    "ref" : "model",
+	"condition":"model.model_name=vehicle.vehicle_model"
+  },
+  {
+    "field": "customer.company_name",
+    "ref" : "customer",
+	"condition":"customer.customer_id=vehicle.customer_id"
+  },
+  {
+    "field": "vehicle.vehicle_tyre",
+    "ref" : "vehicle"
+  }
+ 
+]

@@ -1,0 +1,31 @@
+[
+
+{
+    "field": "expenditure.expenditure_id",
+    "ref" : "expenditure"
+  },
+  {
+    "field": "expenditure.date",
+    "ref" : "expenditure"
+  },
+  {
+    "field": "expenditure.amount",
+    "ref" : "expenditure"
+  },
+  {
+    "field": "expenditure.description",
+    "ref" : "expenditure"
+  },
+  {
+    "field": "paytype.paytype_name",
+    "ref" : "paytype",
+	"condition":"paytype.paytype_id=expenditure.paytype_id"
+  },
+  {
+    "field": "shop.shop_name",
+    "ref" : "shop",
+	"condition":"shop.shop_id=expenditure.shop_id"
+  }
+  
+
+]

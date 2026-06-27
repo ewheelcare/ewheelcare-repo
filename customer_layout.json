@@ -1,0 +1,31 @@
+[
+{
+    "field": "customer.company_name",
+    "ref" : "customer"
+  },
+  
+  {
+    "field": "customer.owner_name",
+    "ref" : "customer"
+  },
+  {
+    "field": "customer.owner_mobile",
+    "ref" : "customer"
+	
+  },
+  {
+    "field": "customer.owner_aadhar",
+    "ref" : "customer"
+	
+  },
+  {
+    "field": "customer.credit_amount",
+    "ref" : "customer"
+	
+  },
+   {
+    "field": "customer.credit_days",
+    "ref" : "customer"
+	
+  }
+]
