@@ -1,0 +1,8 @@
+{
+"entity":"inventory",
+"fields":[
+{"name":"item_id","type":"alphanumeric","check":"","refers_to":{"entity":"item","field":"item_id"},"formula":"","dependent":""},
+{"name":"shop_id","type":"alphanumeric","check":"","refers_to":{"entity":"shop","field":"shop_id"},"formula":"","dependent":""},
+{"name":"qty","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""}
+]
+}

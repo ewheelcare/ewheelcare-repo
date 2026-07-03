@@ -1,0 +1,21 @@
+[
+  {
+    "field": "Name",
+    "Save_to": "storagelocation.storagelocation_name",
+    "processing": "",
+    "mode": "input",
+    "regex": "[a-zA-Z0-9]+"
+  },
+   {
+    "field": "Shop",
+    "Save_to": "storagelocation.shop_id",
+    "processing": "",
+    "mode": "select",
+    "regex": "",
+    "input_src": {
+      "refers_to": "shop",
+      "condition": "",
+      "display": ["shop_name"]
+    }
+  }
+]

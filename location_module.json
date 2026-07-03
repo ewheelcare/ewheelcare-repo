@@ -1,0 +1,9 @@
+[
+  {
+    "field": "Name",
+    "Save_to": "location.location_name",
+    "processing": "",
+    "mode": "input",
+    "regex": "[a-zA-Z0-9, -/.]+"
+  }
+]

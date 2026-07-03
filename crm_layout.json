@@ -1,0 +1,28 @@
+[
+{
+    "field": "crm.crm_name",
+    "ref" : "crm"
+  },
+  {
+    "field": "crm.crm_mobile",
+    "ref" : "crm"
+	
+  },
+  {
+    "field": "crm.crm_email",
+    "ref" : "crm"
+	
+  },
+  {
+    "field": "crm.crm_query",
+    "ref" : "crm"
+  },
+  {
+    "field": "crm.crm_date",
+    "ref" : "crm"
+  },
+  {
+    "field": "crm.crm_action_taken",
+    "ref" : "crm"
+  }
+]

@@ -1,0 +1,15 @@
+{
+"entity":"item",
+"fields":[
+{"name":"item_name","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"item_description","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"cost","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"tax_pc","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"tax_pc_sgst","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"hsn","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"tyre_type_name","type":"alphanumeric","check":"","refers_to":{"entity":"tyre_type","field":"tyre_type_name"},"formula":"","dependent":""},
+{"name":"price_edit","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"purchase_tax_cgst","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"purchase_tax_igst","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""}
+]
+}

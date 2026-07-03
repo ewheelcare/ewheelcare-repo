@@ -1,0 +1,9 @@
+[
+  {
+    "field": "Name",
+    "Save_to": "paytype.paytype_name",
+    "processing": "",
+    "mode": "input",
+    "regex": "[a-zA-Z0-9]+"
+  }
+]

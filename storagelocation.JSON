@@ -1,0 +1,7 @@
+{
+"entity":"storagelocation",
+"fields":[
+{"name":"shop_id","type":"alphanumeric","check":"","refers_to":{"entity":"shop","field":"shop_id"},"formula":"","dependent":""},
+{"name":"storagelocation_name","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""}
+]
+}

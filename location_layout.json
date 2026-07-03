@@ -1,0 +1,10 @@
+[
+{
+    "field": "location.location_id",
+    "ref" : "location"
+  },
+  {
+    "field": "location.location_name",
+    "ref" : "location"
+  }
+]

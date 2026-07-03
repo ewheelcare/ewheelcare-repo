@@ -1,0 +1,23 @@
+SELECT 
+    ifnull(s.shop_id,'-'),
+    ifnull(s.shop_name,'UNASSIGNED'),
+    IFNULL(i.qty, 0) AS qty
+FROM 
+    shop s
+LEFT JOIN 
+    inventory i ON s.shop_id = i.shop_id
+WHERE 
+    i.item_id = '1'
+
+UNION
+
+SELECT 
+     ifnull(I.shop_id,'-'),
+    'UNASSIGNED' AS shop_name,
+    i.qty
+FROM 
+    inventory i
+LEFT JOIN 
+    shop s ON s.shop_id = i.shop_id
+WHERE 
+    i.item_id = '1' AND s.shop_id IS NULL;

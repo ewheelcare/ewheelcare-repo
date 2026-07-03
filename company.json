@@ -1,0 +1,14 @@
+{
+"entity":"company",
+"fields":[
+{"name":"company_name","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"company_address","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"company_gst","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"company_mobile","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"company_email","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"company_bank","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"company_branch","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"company_ifsc","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"company_ac","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""}
+]
+}

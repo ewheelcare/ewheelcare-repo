@@ -1,0 +1,54 @@
+[
+  {
+    "field": "Customer",
+    "Save_to": "vehicle.customer_id",
+    "processing": "",
+    "mode": "select",
+    "regex": "",
+    "input_src": {
+      "refers_to": "customer",
+      "condition": "",
+      "display": ["company_name"]
+    }
+  },
+   {
+    "field": "Vehicle No",
+    "Save_to": "vehicle.vehicle_no",
+    "processing": "",
+    "mode": "input",
+    "regex": "[a-zA-Z0-9]+"
+  },
+   {
+    "field": "Vehicle Brand",
+    "Save_to": "vehicle.vehicle_brand",
+	"Save_from": "make_name",
+    "processing": "",
+     "mode": "select",
+    "regex": "",
+    "input_src": {
+      "refers_to": "make",
+      "condition": "",
+      "display": ["make_name"]
+    }
+  },
+   {
+    "field": "Vehicle Model",
+    "Save_to": "vehicle.vehicle_model",
+	"Save_from": "model_name",
+    "processing": "",
+    "mode": "select",
+    "regex": "",
+    "input_src": {
+      "refers_to": "model",
+      "condition": "",
+      "display": ["model_name"]
+    }
+  },
+   {
+    "field": "Vehicle Tyre",
+    "Save_to": "vehicle.vehicle_tyre",
+    "processing": "",
+    "mode": "input",
+    "regex": "[0-9]+"
+  }
+]

@@ -1,0 +1,7 @@
+{
+"entity":"model",
+"fields":[
+{"name":"make_id","type":"alphanumeric","check":"","refers_to":{"entity":"make","field":"make_id"},"formula":"","dependent":""},
+{"name":"model_name","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""}
+]
+}

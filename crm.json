@@ -1,0 +1,12 @@
+{
+"entity":"crm",
+"fields":[
+{"name":"crm_name","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"crm_mobile","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"crm_email","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"crm_query","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"crm_date","type":"date","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"crm_action_taken","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""}
+
+]
+}
