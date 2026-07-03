@@ -1,0 +1,18 @@
+[
+{
+    "field": "inventory.qty",
+    "ref" : "inventory"
+  },
+
+  {
+    "field": "item.item_name",
+    "ref" : "item",
+	"condition":"item.item_id=inventory.item_id"
+  },
+  {
+    "field": "shop.shop_name",
+    "ref" : "shop",
+	"condition":"shop.shop_id=inventory.shop_id"
+  }
+  
+]

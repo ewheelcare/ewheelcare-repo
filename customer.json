@@ -1,0 +1,12 @@
+{
+"entity":"customer",
+"fields":[
+{"name":"company_name","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"company_address","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"owner_name","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"owner_mobile","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"owner_aadhar","type":"numeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"credit_amount","type":"numeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"credit_days","type":"numeric","check":"","refers_to":{},"formula":"","dependent":""}
+]
+}

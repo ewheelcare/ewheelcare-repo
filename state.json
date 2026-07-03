@@ -1,0 +1,7 @@
+{
+"entity":"state2",
+"fields":[
+{"name":"state_name","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"country_id","type":"alphanumeric","check":"","refers_to":{"entity":"country","field":"country_id"},"formula":"","dependent":""}
+]
+}

@@ -1,0 +1,46 @@
+[
+  {
+    "field": "Service",
+    "Save_to": "servicecost.service_id",
+    "processing": "",
+    "mode": "select",
+    "regex": "",
+    "input_src": {
+      "refers_to": "service",
+      "condition": "",
+      "display": ["service_name"]
+    }
+  },
+  {
+    "field": "Make",
+    "Save_to": "servicecost.make_id",
+    "processing": "",
+    "mode": "select",
+    "regex": "",
+    "input_src": {
+      "refers_to": "make",
+      "condition": "",
+      "display": ["make_name"]
+    }
+  },
+  {
+    "field": "Model",
+    "Save_to": "servicecost.model_id",
+    "processing": "",
+    "mode": "select",
+    "regex": "",
+    "input_src": {
+      "refers_to": "model",
+      "condition": "#make_id",
+      "display": ["model_name"]
+    }
+  },
+   {
+    "field": "Cost",
+    "Save_to": "servicecost.cost",
+    "processing": "",
+    "mode": "input",
+    "regex": "[a-zA-Z0-9 @]+"
+  }
+   
+]

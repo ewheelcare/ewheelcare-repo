@@ -1,0 +1,17 @@
+[
+	{
+    "field": "model.model_name",
+    "ref" : "model"
+  },
+{
+    "field": "make.make_name",
+    "ref" : "make",
+	"condition":"make.make_id=model.make_id"
+  },
+{
+    "field": "model.model_id",
+    "ref" : "model"
+  }
+  
+
+]

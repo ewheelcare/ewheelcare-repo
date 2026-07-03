@@ -1,0 +1,11 @@
+{
+"entity":"vehicle",
+"fields":[
+{"name":"vehicle_no","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"vehicle_brand","type":"alphanumeric","check":"","refers_to":{"entity":"make","field":"make_name"},"formula":"","dependent":""},
+{"name":"vehicle_model","type":"alphanumeric","check":"","refers_to":{"entity":"model","field":"model_name"},"formula":"","dependent":""},
+{"name":"customer_id","type":"alphanumeric","check":"","refers_to":{"entity":"customer","field":"customer_id"},"formula":"","dependent":""},
+{"name":"vehicle_tyre","type":"number","check":"","refers_to":{},"formula":"","dependent":""},
+
+]
+}

@@ -1,0 +1,19 @@
+[
+{
+    "field": "shop.shop_id",
+    "ref" : "shop"
+  },
+  {
+    "field": "shop.shop_name",
+    "ref" : "shop"
+  },
+ {
+    "field": "shop.address",
+    "ref" : "shop"
+  },
+  {
+    "field": "location.location_name",
+    "ref" : "location",
+	"condition":"location.location_id=shop.location_id"
+  }
+]

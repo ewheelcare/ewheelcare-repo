@@ -1,0 +1,65 @@
+[
+  {
+    "field": "Name",
+    "Save_to": "company.company_name",
+    "processing": "",
+    "mode": "input",
+    "regex": "[a-zA-Z0-9 ]+"
+  },
+  {
+    "field": "Address",
+    "Save_to": "company.company_address",
+    "processing": "",
+    "mode": "input",
+    "regex": "[a-zA-Z0-9 ]+"
+  },
+  {
+    "field": "GST",
+    "Save_to": "company.company_gst",
+    "processing": "",
+    "mode": "input",
+    "regex": "[a-zA-Z0-9 ]+"
+  },
+  {
+    "field": "Mobile",
+    "Save_to": "company.company_mobile",
+    "processing": "",
+    "mode": "input",
+    "regex": "(?:\\+91|0)?[6-9]\\d{9}"
+  },
+  {
+    "field": "Email",
+    "Save_to": "company.company_email",
+    "processing": "",
+    "mode": "input",
+    "regex": "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
+  },
+  {
+    "field": "Bank",
+    "Save_to": "company.company_bank",
+    "processing": "",
+    "mode": "input",
+    "regex": "[a-zA-Z0-9 ]+"
+  },
+  {
+    "field": "Branch",
+    "Save_to": "company.company_branch",
+    "processing": "",
+    "mode": "input",
+    "regex": "[a-zA-Z0-9 ]+"
+  },
+   {
+    "field": "IFSC",
+    "Save_to": "company.company_ifsc",
+    "processing": "",
+    "mode": "input",
+    "regex": "[a-zA-Z0-9 ]+"
+  },
+  {
+    "field": "Account",
+    "Save_to": "company.company_ac",
+    "processing": "",
+    "mode": "input",
+    "regex": "[a-zA-Z0-9 ]+"
+  }
+]

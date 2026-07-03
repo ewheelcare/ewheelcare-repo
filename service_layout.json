@@ -1,0 +1,42 @@
+[
+{
+    "field": "service.service_name",
+    "ref" : "service"
+  },
+  {
+    "field": "service.service_description",
+    "ref" : "service"
+  },
+  {
+    "field": "service.cost",
+    "ref" : "service"
+  },
+  {
+    "field": "service.tax_pc",
+    "ref" : "service"
+	
+  },
+  {
+    "field": "service.tax_pc_sgst",
+    "ref" : "service"
+	
+  },
+   {
+    "field": "service.hsn",
+    "ref" : "service"
+	
+  },
+  {
+    "field": "service.view_order",
+    "field": "service.view_order",
+    "ref" : "service"
+	
+  },
+	
+  {
+    "field": "service.price_edit",
+    "field": "service.price_edit",
+    "ref" : "service"
+	
+  }
+]

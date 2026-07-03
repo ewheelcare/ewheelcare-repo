@@ -1,0 +1,19 @@
+[
+{
+    "field": "state.state_id",
+    "ref" : "state"
+  },
+  {
+    "field": "state.state_name",
+    "ref" : "state"
+  },
+  {
+    "field": "state.state_gdp",
+    "ref" : "state"
+  },
+  {
+    "field": "country.country_name",
+    "ref" : "country",
+	"condition":"state.country_id=country.country_id"
+  }
+]

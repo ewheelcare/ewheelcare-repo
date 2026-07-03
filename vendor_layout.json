@@ -1,0 +1,24 @@
+[
+{
+    "field": "vendor.company_name",
+    "ref" : "vendor"
+  },
+  {
+    "field": "vendor.company_address",
+    "ref" : "vendor"
+  },
+  {
+    "field": "vendor.owner_name",
+    "ref" : "vendor"
+  },
+  {
+    "field": "vendor.owner_mobile",
+    "ref" : "vendor"
+	
+  },
+  {
+    "field": "vendor.owner_aadhar",
+    "ref" : "vendor"
+	
+  }
+]

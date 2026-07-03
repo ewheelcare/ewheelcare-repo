@@ -1,0 +1,44 @@
+[
+{
+    "field": "company.company_name",
+    "ref" : "company"
+  },
+  {
+    "field": "company.company_address",
+    "ref" : "company"
+  },
+  {
+    "field": "company.company_gst",
+    "ref" : "company"
+  },
+  {
+    "field": "company.company_mobile",
+    "ref" : "company"
+	
+  },
+  {
+    "field": "company.company_email",
+    "ref" : "company"
+	
+  },
+  {
+    "field": "company.company_bank",
+    "ref" : "company"
+	
+  },
+   {
+    "field": "company.company_branch",
+    "ref" : "company"
+	
+  },
+  {
+    "field": "company.company_ifsc",
+    "ref" : "company"
+	
+  },
+   {
+    "field": "company.company_ac",
+    "ref" : "company"
+	
+  }
+]

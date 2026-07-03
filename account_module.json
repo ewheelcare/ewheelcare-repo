@@ -1,0 +1,22 @@
+[
+  {
+    "field": "Pay type",
+    "Save_to": "account.paytype_id",
+    "processing": "",
+    "mode": "select",
+    "regex": "",
+    "input_src": {
+      "refers_to": "paytype",
+      "condition": "",
+      "display": ["paytype_name"]
+    }
+  },
+   {
+    "field": "Name",
+    "Save_to": "account.account_name",
+    "processing": "",
+    "mode": "input",
+    "regex": "[a-zA-Z0-9 /--@]+"
+  }
+ 
+]

@@ -1,0 +1,14 @@
+{
+"entity":"service",
+"fields":[
+{"name":"service_name","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"service_description","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"cost","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"tax_pc","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"tax_pc_sgst","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"hsn","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"view_order","type":"number","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"price_edit","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""}
+
+]
+}

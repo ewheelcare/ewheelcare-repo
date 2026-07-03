@@ -1,0 +1,21 @@
+[
+{
+    "field": "servicecost.cost",
+    "ref" : "servicecost"
+  },
+  {
+    "field": "make.make_name",
+    "ref" : "make",
+	"condition":"make.make_id=servicecost.make_id"
+  },
+  {
+    "field": "model.model_name",
+    "ref" : "model",
+	"condition":"model.model_id=servicecost.model_id"
+  },
+  {
+    "field": "service.service_name",
+    "ref" : "service",
+	"condition":"service.service_id=servicecost.service_id"
+  }
+]

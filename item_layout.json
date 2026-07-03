@@ -1,0 +1,49 @@
+[
+{
+    "field": "item.item_name",
+    "ref" : "item"
+  },
+  {
+    "field": "item.item_description",
+    "ref" : "item"
+  },
+  {
+    "field": "item.cost",
+    "ref" : "item"
+  },
+  {
+    "field": "item.tax_pc",
+    "ref" : "item"
+	
+  },
+  {
+    "field": "item.tax_pc_sgst",
+    "ref" : "item"
+	
+  },
+   {
+    "field": "item.hsn",
+    "ref" : "item"
+	
+  },
+   {
+    "field": "item.tyre_type_name",
+    "ref" : "tyre_type"
+	
+  },
+  {
+    "field": "item.price_edit",
+    "ref" : "tyre_type"
+	
+  },
+	{
+    "field": "item.purchase_tax_cgst",
+    "ref" : "item"
+	
+  },
+  {
+    "field": "item.purchase_tax_igst",
+    "ref" : "item"
+	
+  }
+]

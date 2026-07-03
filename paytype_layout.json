@@ -1,0 +1,10 @@
+[
+{
+    "field": "paytype.paytype_id",
+    "ref" : "paytype"
+  },
+  {
+    "field": "paytype.paytype_name",
+    "ref" : "paytype"
+  }
+]

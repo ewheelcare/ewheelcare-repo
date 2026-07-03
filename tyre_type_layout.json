@@ -1,0 +1,10 @@
+[
+{
+    "field": "tyre_type.tyre_type_id",
+    "ref" : "tyre_type"
+  },
+  {
+    "field": "tyre_type.tyre_type_name",
+    "ref" : "tyre_type"
+  }
+]

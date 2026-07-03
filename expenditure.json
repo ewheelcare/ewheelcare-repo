@@ -1,0 +1,10 @@
+{
+"entity":"expenditure",
+"fields":[
+{"name":"date","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"amount","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""},
+{"name":"paytype_id","type":"alphanumeric","check":"","refers_to":{"entity":"paytype","field":"paytype_id"},"formula":"","dependent":""},
+{"name":"shop_id","type":"alphanumeric","check":"","refers_to":{"entity":"shop","field":"shop_id"},"formula":"","dependent":""},
+{"name":"description","type":"alphanumeric","check":"","refers_to":{},"formula":"","dependent":""}
+]
+}
