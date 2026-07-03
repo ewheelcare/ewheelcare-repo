@@ -12,7 +12,7 @@ header('Content-Type: application/json');
 $trans_id = trim($_POST["trans_id"] ?? '');
 
 if ($trans_id === '') {
-    echo json_encode(["status"=>"error","message"=>"Invalid Request"]);
+    echo json_encode(["status" => "error", "message" => "Invalid Request"]);
     exit;
 }
 
@@ -21,8 +21,8 @@ $user_id = $_SESSION["user_id"] ?? null;
 
 if (!$shop_id || !$user_id) {
     echo json_encode([
-        "status"=>"error",
-        "message"=>"Session expired. Please login again."
+        "status" => "error",
+        "message" => "Session expired. Please login again."
     ]);
     exit;
 }
@@ -39,7 +39,8 @@ try {
         WHERE trans_id = ? 
         FOR UPDATE
     ");
-    if (!$lock) throw new Exception($conn->error);
+    if (!$lock)
+        throw new Exception($conn->error);
 
     $lock->bind_param("s", $trans_id);
     $lock->execute();
@@ -62,7 +63,8 @@ try {
         FROM receipt_trans_det 
         WHERE trans_id = ? AND active_status = 'A'
     ");
-    if (!$chk) throw new Exception($conn->error);
+    if (!$chk)
+        throw new Exception($conn->error);
 
     $chk->bind_param("s", $trans_id);
     $chk->execute();
@@ -72,123 +74,148 @@ try {
     if ($cnt == 0) {
         throw new Exception("No detail rows found");
     }
-/* =========================
-   2.5️⃣ VENDOR CREATION / FETCH
-========================= */
+    /* =========================
+       2.5️⃣ VENDOR CREATION / FETCH
+    ========================= */
 
-$stmt = $conn->prepare("
+    $stmt = $conn->prepare("
     SELECT company_name, customer_name, customer_mobile, customer_gst
     FROM receipt_trans
     WHERE trans_id = ?
 ");
-$stmt->bind_param("s", $trans_id);
-$stmt->execute();
-$data = $stmt->get_result()->fetch_assoc();
-$stmt->close();
+    $stmt->bind_param("s", $trans_id);
+    $stmt->execute();
+    $data = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
 
-$company_name    = trim($data['company_name']);
-$customer_name   = trim($data['customer_name']);
-$customer_mobile = trim($data['customer_mobile']);
-$customer_gst    = trim($data['customer_gst']);
+    $company_name = trim($data['company_name']);
+    $customer_name = trim($data['customer_name']);
+    $customer_mobile = trim($data['customer_mobile']);
+    $customer_gst = trim($data['customer_gst']);
 
-if ($company_name == '' || $customer_mobile == '') {
-    throw new Exception("Vendor details missing");
-}
+    if ($company_name == '' || $customer_mobile == '') {
+        throw new Exception("Vendor details missing");
+    }
 
-/* Check vendor */
-$chk = $conn->prepare("
+    /* Check vendor */
+    $chk = $conn->prepare("
     SELECT vendor_id
     FROM vendor
     WHERE LOWER(company_name)=LOWER(?) AND owner_mobile=?
     LIMIT 1
 ");
-$chk->bind_param("ss", $company_name, $customer_mobile);
-$chk->execute();
-$res = $chk->get_result();
+    $chk->bind_param("ss", $company_name, $customer_mobile);
+    $chk->execute();
+    $res = $chk->get_result();
 
-if ($row = $res->fetch_assoc()) {
+    if ($row = $res->fetch_assoc()) {
 
-    $vendor_id = $row["vendor_id"];
+        $vendor_id = $row["vendor_id"];
 
-} else {
+    } else {
 
-    /* Generate vendor_id */
-    $res_id = $conn->query("
+        /* Generate vendor_id */
+        $res_id = $conn->query("
         SELECT IFNULL(MAX(vendor_id),1000000)+1 AS vendor_id
         FROM vendor
         FOR UPDATE
     ");
-    $row_id = $res_id->fetch_assoc();
-    $vendor_id = $row_id["vendor_id"];
+        $row_id = $res_id->fetch_assoc();
+        $vendor_id = $row_id["vendor_id"];
 
-    /* Insert vendor */
-    $ins = $conn->prepare("
+        /* Insert vendor */
+        $ins = $conn->prepare("
         INSERT INTO vendor (
             vendor_id, company_name, owner_name, owner_mobile, owner_aadhar, created_by,trans_id,trans_creation
         ) VALUES (?, ?, ?, ?, ?,?,?,'PROCUREMENT')
     ");
-    $ins->bind_param(
-        "ssssssi",
-        $vendor_id,
-        $company_name,
-        $customer_name,
-        $customer_mobile,
-        $customer_gst,
-        $user_id,
-        $trans_id
-    );
-    $ins->execute();
-}
+        $ins->bind_param(
+            "ssssssi",
+            $vendor_id,
+            $company_name,
+            $customer_name,
+            $customer_mobile,
+            $customer_gst,
+            $user_id,
+            $trans_id
+        );
+        $ins->execute();
+    }
 
-       
+
     /* =========================
        3️⃣ REVERSE OLD INVENTORY
     ========================= */
     $sql_rev = "
-        UPDATE inventory i
-        JOIN (
-            SELECT item_id, SUM(qty) AS qty
-            FROM inventory_trans
-            WHERE trans_id = ?
-            GROUP BY item_id
-        ) t ON i.item_id = t.item_id 
-        SET i.qty = i.qty - t.qty,
-        i.modified_by = ?
-    ";
+    UPDATE inventory_shop s
+    JOIN (
+        SELECT item_id, shop_id, qty
+        FROM inventory_trans
+        WHERE trans_id = ? AND trans_type = 'IN'
+    ) t
+        ON s.item_id = t.item_id
+       AND s.shop_name = t.shop_id
+    SET
+        s.qty = s.qty - t.qty,
+        s.modified_by = ?
+";
+
     $stmt = $conn->prepare($sql_rev);
-    if (!$stmt) throw new Exception($conn->error);
 
-    $stmt->bind_param("ss", $trans_id,$user_id);
-    $stmt->execute();
+    if (!$stmt) {
+        throw new Exception($conn->error);
+    }
+
+    $stmt->bind_param("ss", $trans_id, $user_id);
+
+    if (!$stmt->execute()) {
+        throw new Exception($stmt->error);
+    }
+
     $stmt->close();
-
     /* =========================
        4️⃣ DELETE OLD inventory_trans
     ========================= */
     $stmt = $conn->prepare("DELETE FROM inventory_trans WHERE trans_id = ?");
-    if (!$stmt) throw new Exception($conn->error);
+    if (!$stmt)
+        throw new Exception($conn->error);
 
     $stmt->bind_param("s", $trans_id);
     $stmt->execute();
     $stmt->close();
-
     /* =========================
        5️⃣ INSERT INVENTORY (UPSERT)
     ========================= */
     $sql1 = "
-        INSERT INTO inventory (item_id, qty, created_by)
-        SELECT item_id, SUM(qty), ?
-        FROM receipt_trans_det
-        WHERE trans_id = ? AND active_status = 'A'
-        GROUP BY item_id
-        ON DUPLICATE KEY UPDATE
-        qty = qty + VALUES(qty)
-        ";
+    INSERT INTO inventory_shop
+        (item_id, shop_name, qty, modified_by)
+    SELECT
+        item_id,
+        shop_id,
+        SUM(qty),
+        ?
+    FROM receipt_trans_det
+    WHERE trans_id = ?
+      AND active_status = 'A'
+    GROUP BY item_id, shop_id
+    ON DUPLICATE KEY UPDATE
+        qty = qty + VALUES(qty),
+        modified_by = VALUES(modified_by)
+";
 
-        $stmt = $conn->prepare($sql1);
-        $stmt->bind_param("ss", $user_id, $trans_id);
-        $stmt->execute();
-        $stmt->close();
+    $stmt = $conn->prepare($sql1);
+
+    if (!$stmt) {
+        throw new Exception($conn->error);
+    }
+
+    $stmt->bind_param("ss", $user_id, $trans_id);
+
+    if (!$stmt->execute()) {
+        throw new Exception($stmt->error);
+    }
+
+    $stmt->close();
     /* =========================
        6️⃣ INSERT inventory_trans
     ========================= */
@@ -203,7 +230,8 @@ if ($row = $res->fetch_assoc()) {
         qty = VALUES(qty)
     ";
     $stmt = $conn->prepare($sql2);
-    if (!$stmt) throw new Exception($conn->error);
+    if (!$stmt)
+        throw new Exception($conn->error);
 
     $stmt->bind_param("ssss", $shop_id, $trans_id, $user_id, $trans_id);
 
@@ -239,13 +267,14 @@ if ($row = $res->fetch_assoc()) {
     ";
 
     $stmt = $conn->prepare($sql3);
-    if (!$stmt) throw new Exception($conn->error);
+    if (!$stmt)
+        throw new Exception($conn->error);
 
     $stmt->bind_param("ssss", $trans_id, $vendor_id, $user_id, $trans_id);
     $stmt->execute();
-if ($stmt->affected_rows === 0) {
-    throw new Exception("Finalize failed or already finalized");
-}
+    if ($stmt->affected_rows === 0) {
+        throw new Exception("Finalize failed or already finalized");
+    }
     if ($stmt->errno) {
         throw new Exception($stmt->error);
     }
@@ -258,9 +287,9 @@ if ($stmt->affected_rows === 0) {
     $conn->commit();
 
     echo json_encode([
-        "status"=>"success",
-        "trans_id"=>$trans_id,
-        "message"=>"Receipt finalized successfully"
+        "status" => "success",
+        "trans_id" => $trans_id,
+        "message" => "Receipt finalized successfully"
     ]);
 
 } catch (Exception $e) {
@@ -270,8 +299,8 @@ if ($stmt->affected_rows === 0) {
     error_log("Finalize Error: " . $e->getMessage());
 
     echo json_encode([
-        "status"=>"error",
-        "message"=>$e->getMessage()
+        "status" => "error",
+        "message" => $e->getMessage()
     ]);
 }
 

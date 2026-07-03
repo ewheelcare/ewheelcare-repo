@@ -1,9 +1,5 @@
 <?php
-/**
- * item_delete.php
- * Soft-deletes a parent item and all its linked sub items.
- * Sets status = 'D' on item table. Does NOT touch groupassociation.
- */
+
 include 'db_config.php';
 
 $item_id = isset($_POST['item_id']) ? intval($_POST['item_id']) : 0;
@@ -19,9 +15,9 @@ try {
 
     // 1. Collect all sub item IDs linked to this parent
     $sub_result = $conn->query(
-        "SELECT item_id FROM groupassociation
-         WHERE itemgroup_id = $item_id
-           AND item_id <> itemgroup_id"
+        "SELECT item_id FROM item_association
+         WHERE item_group_id = $item_id
+           AND item_id <> item_group_id"
     );
 
     $sub_ids = [];

@@ -310,7 +310,7 @@ if (!isset($_COOKIE["user_id"])) {
                     $sql = "SELECT s.trans_id, d.subtrans_id, s.trans_date,
                                    COALESCE(NULLIF(c.company_name,''), c.owner_name) AS company_name,
                                    c.owner_mobile, s.vehicle_no,
-                                   i.service_name, d.total, d.tax_amount, s.gst,
+                                   i.service_name, d.total, d.tax_amount, d.tax_amount_sgst, s.gst,
                                    DATEDIFF(NOW(), s.trans_date) AS pending_days,
                                    IFNULL(c.credit_days, 15) AS credit_days,
                                    IFNULL(c.credit_amount, 0) AS credit_amount,
@@ -322,20 +322,23 @@ if (!isset($_COOKIE["user_id"])) {
                             WHERE s.active_status = 'A' AND d.active_status = 'A'
                             AND s.pending > 0";
                     if (!empty($from_date))
-                        $sql .= " AND s.trans_date BETWEEN '$from_date' AND '$to_date'";
+                         $sql .= " AND s.trans_date BETWEEN '$from_date' AND '$to_date'";
                     if (!empty($customer))
-                        $sql .= " AND s.customer = '$customer'";
+                         $sql .= " AND s.customer = '$customer'";
                     if (!empty($service))
-                        $sql .= " AND d.service_id = '$service'";
+                         $sql .= " AND d.service_id = '$service'";
                     $sql .= " ORDER BY pending_days DESC, s.trans_id DESC";
 
                     $result = $conn->query($sql);
                     $rows = [];
-                    $grand_total = $grand_tax = $grand_pending = 0;
+                    $grand_total = $grand_tax = $grand_pending = $grand_taxable = 0;
                     while ($row = $result->fetch_assoc()) {
                         $rows[] = $row;
-                        $grand_total += $row['total'];
-                        $grand_tax += $row['tax_amount'];
+                        $row_tax = (float)($row['tax_amount'] ?? 0) + (float)($row['tax_amount_sgst'] ?? 0);
+                        $row_total = (float)($row['total'] ?? 0) + $row_tax;
+                        $grand_total += $row_total;
+                        $grand_tax += $row_tax;
+                        $grand_taxable += (float)($row['total'] ?? 0);
                         $grand_pending += $row['pending_amount'];
                     }
                     ?>
@@ -372,7 +375,9 @@ if (!isset($_COOKIE["user_id"])) {
                                             $days = (int) $row['pending_days'];
                                             $allowed_days = (int) $row['credit_days'];
                                             $overdue_days = $days - $allowed_days;
-                                            $taxable = $row['total'] - $row['tax_amount'];
+                                            $taxable = (float)($row['total'] ?? 0);
+                                            $row_tax = (float)($row['tax_amount'] ?? 0) + (float)($row['tax_amount_sgst'] ?? 0);
+                                            $row_total = $taxable + $row_tax;
  
                                             if ($overdue_days > 30) {
                                                 $badge = 'overdue';
@@ -405,10 +410,10 @@ if (!isset($_COOKIE["user_id"])) {
                                                 <td style="text-align:right">
                                                     <?php echo number_format($taxable, 2); ?></td>
                                                 <td style="text-align:right"><span
-                                                        class="tax-val"><?php echo number_format($row['tax_amount'], 2); ?></span>
+                                                        class="tax-val"><?php echo number_format($row_tax, 2); ?></span>
                                                 </td>
                                                 <td style="text-align:right"><span
-                                                        class="total-val"><?php echo number_format($row['total'], 2); ?></span>
+                                                        class="total-val"><?php echo number_format($row_total, 2); ?></span>
                                                 </td>
                                                 <td style="text-align:right">
                                                     <strong>₹<?php echo number_format($row['pending_amount'], 2); ?></strong>
@@ -429,9 +434,10 @@ if (!isset($_COOKIE["user_id"])) {
                                     </tbody>
                                     <tfoot>
                                         <tr class="tfoot-row">
-                                            <td colspan="9" style="text-align:right">GRAND TOTAL</td>
-                                            <td style="text-align:right">₹<?php echo number_format($grand_total, 2); ?>
-                                            </td>
+                                            <td colspan="7" style="text-align:right">GRAND TOTAL</td>
+                                            <td style="text-align:right">₹<?php echo number_format($grand_taxable, 2); ?></td>
+                                            <td style="text-align:right">₹<?php echo number_format($grand_tax, 2); ?></td>
+                                            <td style="text-align:right">₹<?php echo number_format($grand_total, 2); ?></td>
                                             <td style="text-align:right">
                                                 ₹<?php echo number_format($grand_pending, 2); ?></td>
                                             <td colspan="2"></td>

@@ -37,50 +37,59 @@
 									<h6 class="m-0 font-weight-bold text-white">Live Shop Inventory</h6>
 								</div>
 								<div class="card-body">
+									<!-- Fake inputs to prevent browser autofill -->
+									<input type="text" style="display:none" name="fake_username_autofill_prevent">
+									<input type="password" style="display:none" name="fake_password_autofill_prevent">
+
+									<!-- Search Filters -->
+									<div class="row mb-4">
+										<div class="col-md-12">
+											<div class="form-group mb-0">
+												<label>Search Item</label>
+												<input type="text" id="itemSearchInput" class="form-control"
+													placeholder="Type Item Code or Name..." autocomplete="off">
+											</div>
+										</div>
+									</div>
+
 									<div class="table-responsive">
 										<table class="table table-hover table-bordered" id="inventoryTable">
 											<thead class="bg-light">
 												<tr>
+													<th>Item Code</th>
 													<th>Item Name</th>
-													<th>Storage Location</th>
-													<th>Current Qty</th>
-													<th style="width:150px">Actions</th>
+													<th class="text-center">Sirasapalli</th>
+													<th class="text-center">Gajuwaka</th>
 												</tr>
 											</thead>
 											<tbody>
 												<?php
-												$sql = "SELECT i.ITEM_NAME, s.shop_name, sl.storagelocation_name, inv.qty, inv.item_id, inv.shop_id
-														FROM shop_inventory inv
-														JOIN item i ON inv.item_id = i.ITEM_ID
-														JOIN shop s ON inv.shop_id = s.shop_id
-														JOIN storagelocation sl ON inv.storagelocation_id = sl.storagelocation_id
-														ORDER BY s.shop_name, i.ITEM_NAME";
+												$sql = "SELECT 
+															i.ITEM_ID, 
+															i.ITEM_NAME,
+															IFNULL(SUM(CASE WHEN UPPER(inv.shop_name) LIKE '%SIRASAPALLI%' THEN inv.qty ELSE 0 END), 0) AS sirasapalli_qty,
+															IFNULL(SUM(CASE WHEN UPPER(inv.shop_name) LIKE '%GAJUWAKA%' THEN inv.qty ELSE 0 END), 0) AS gajuwaka_qty
+														FROM item i
+														LEFT JOIN inventory_shop inv ON i.ITEM_ID = inv.item_id
+														GROUP BY i.ITEM_ID, i.ITEM_NAME
+														ORDER BY i.ITEM_NAME";
 												$result = $conn->query($sql);
 
-												$current_shop = "";
 												while ($row = $result->fetch_assoc()) {
-													if ($current_shop != $row['shop_name']) {
-														$current_shop = $row['shop_name'];
-														echo '<tr class="bg-gray-100 font-weight-bold"><td colspan="4" class="text-primary" style="font-size:110%"><i class="fas fa-store"></i> ' . $current_shop . '</td></tr>';
-													}
 													?>
-													<tr>
-														<td><?php echo $row['ITEM_NAME']; ?></td>
-														<td><span class="text-secondary small"><?php echo $row['storagelocation_name']; ?></span></td>
-														<td>
-															<strong><?php echo $row['qty']; ?></strong>
-															<?php if ($row['qty'] < 10) { ?>
-																<span class="badge badge-warning">Low Stock</span>
-															<?php } ?>
-														</td>
-														<td class="text-center">
-															<?php if ($row['qty'] < 50) { ?>
-																<button class="btn btn-danger btn-sm btn-block"
-																	onclick="openReorder('<?php echo addslashes($row['ITEM_NAME']); ?>', <?php echo $row['qty']; ?>)">
-																	<i class="fas fa-shopping-cart"></i> Reorder
-																</button>
-															<?php } ?>
-														</td>
+													<tr data-sirasapalli="<?php echo $row['sirasapalli_qty']; ?>" data-gajuwaka="<?php echo $row['gajuwaka_qty']; ?>">
+														<td><?php echo htmlspecialchars($row['ITEM_ID']); ?></td>
+														<td><?php echo htmlspecialchars($row['ITEM_NAME']); ?></td>
+														<?php if ($row['sirasapalli_qty'] == 0) { ?>
+															<td class="text-center" style="background-color: #f28f8f !important; color: black !important; font-size: 18px !important; font-weight: bold; vertical-align: middle;">-</td>
+														<?php } else { ?>
+															<td class="text-center" style="background-color: #8ce0a2 !important; color: black !important; font-size: 18px !important; font-weight: bold; vertical-align: middle;"><?php echo $row['sirasapalli_qty']; ?></td>
+														<?php } ?>
+														<?php if ($row['gajuwaka_qty'] == 0) { ?>
+															<td class="text-center" style="background-color: #f28f8f !important; color: black !important; font-size: 18px !important; font-weight: bold; vertical-align: middle;">-</td>
+														<?php } else { ?>
+															<td class="text-center" style="background-color: #8ce0a2 !important; color: black !important; font-size: 18px !important; font-weight: bold; vertical-align: middle;"><?php echo $row['gajuwaka_qty']; ?></td>
+														<?php } ?>
 													</tr>
 													<?php
 												}
@@ -114,60 +123,33 @@
 	<!-- Scroll to Top Button-->
 	<?php include "modals.php"; ?>
 
-	<div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-hidden="true">
-		<div class="modal-dialog" role="document">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title" id="reorderModalTitle">Reorder Item</h5>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
-					</button>
-				</div>
-				<div class="modal-body">
-					<div class="form-group">
-						<label>Item Name</label>
-						<input type="text" class="form-control" id="reorderItemName" readonly>
-					</div>
-					<div class="form-group">
-						<label>Current Stock</label>
-						<input type="text" class="form-control" id="reorderCurrentStock" readonly>
-					</div>
-					<div class="form-group">
-						<label>Reorder Quantity</label>
-						<input type="number" class="form-control" id="reorderQty" placeholder="Enter quantity to order">
-					</div>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-					<button type="button" class="btn btn-success" id="saveReorder">Submit Reorder</button>
-				</div>
-			</div>
-		</div>
-	</div>
+
 
 	<?php include "footer_include.php"; ?>
 	<script>
-		var addModal = new bootstrap.Modal(document.getElementById('addModal'));
 
-		function openReorder(itemName, currentStock) {
-			$('#reorderItemName').val(itemName);
-			$('#reorderCurrentStock').val(currentStock);
-			$('#reorderQty').val('');
-			addModal.show();
-		}
+		$(document).ready(function () {
+			// Filter table rows based on search inputs
+			function filterTable() {
+				let itemQuery = $('#itemSearchInput').val().toLowerCase().trim();
 
-		$('#saveReorder').on('click', function () {
-			let itemName = $('#reorderItemName').val();
-			let qty = $('#reorderQty').val();
+				$('#inventoryTable tbody tr').each(function () {
+					let row = $(this);
+					let itemCode = row.find('td:nth-child(1)').text().toLowerCase();
+					let itemName = row.find('td:nth-child(2)').text().toLowerCase();
 
-			if (!qty || qty <= 0) {
-				alert("Please enter a valid quantity.");
-				return;
+					let matchesItem = (itemCode.indexOf(itemQuery) > -1 || itemName.indexOf(itemQuery) > -1);
+
+					if (matchesItem) {
+						row.show();
+					} else {
+						row.hide();
+					}
+				});
 			}
 
-			// In a real scenario, you would send this to a backend script
-			alert("Reorder request for " + qty + " units of " + itemName + " has been submitted!");
-			addModal.hide();
+			// Bind events
+			$('#itemSearchInput').on('keyup input', filterTable);
 		});
 	</script>
 

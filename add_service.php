@@ -75,41 +75,31 @@ if ($user_id == "" || $shop == "") {
 
     } else {
 
-        // lock config row
         $stmt = $conn->prepare("
-            SELECT slno
-            FROM config
-            WHERE item='CUSTOMER'
-            FOR UPDATE
-        ");
-        $stmt->execute();
-        $row = $stmt->get_result()->fetch_assoc();
+    INSERT INTO customer
+    (
+        company_name,
+        owner_name,
+        owner_mobile
+    )
+    VALUES
+    (
+        ?, ?, ?
+    )
+");
 
-        $customer_id = $row["slno"] + 1;
-        error_log("Customer ID:".$customer_id);
-        // update config
-        $stmt = $conn->prepare("
-            UPDATE config
-            SET slno=?
-            WHERE item='CUSTOMER'
-        ");
-        $stmt->bind_param("i", $customer_id);
-        $stmt->execute();
+$stmt->bind_param(
+    "sss",
+    $company_name,
+    $customer_name,
+    $customer_mobile
+);
 
-        // insert customer
-        $stmt = $conn->prepare("
-            INSERT INTO customer
-            (customer_id, company_name, owner_name, owner_mobile)
-            VALUES (?, ?, ?, ?)
-        ");
-        $stmt->bind_param(
-            "isss",
-            $customer_id,
-            $company_name,
-            $customer_name,
-            $customer_mobile
-        );
-        $stmt->execute();
+$stmt->execute();
+
+$customer_id = $conn->insert_id;
+
+error_log("Customer ID: ".$customer_id);
         // error_log("this is reached".$customer_id);
         // insert gst
         $stmt = $conn->prepare("
@@ -282,21 +272,14 @@ if ($user_id == "" || $shop == "") {
 
 } catch (Exception $e) {
 
-    
+    if ($conn) {
         $conn->rollback();
-    
+    }
 
-    error_log(
-   "add_service.php ".
-   "Shop=".$shop.
-   " User=".$user_id.
-   " Error=".$e->getMessage()
-);
-
-        echo json_encode([
+    echo json_encode([
         "success" => false,
-        "message" => "Unable to create service invoice"
-        ]);
+        "message" => $e->getMessage()
+    ]);
 }
 
 $conn->close();

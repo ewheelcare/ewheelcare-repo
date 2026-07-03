@@ -1,6 +1,8 @@
 <?php
-if (!isset($_COOKIE["user_id"])) {
-  header("Location: login.php?redirect=" . urlencode($_SERVER['REQUEST_URI']));
+session_start();
+
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['shop'])) {
+  header("Location: login.php");
   exit();
 }
 ?>
@@ -12,20 +14,14 @@ if (!isset($_COOKIE["user_id"])) {
   include "db_config.php";
   ?>
   <style>
-    .fullscreen-modal {
-      width: 100vw;
-      height: 100vh;
-      margin: 0;
-      border-radius: 0;
+    /* Hide number input arrows */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+        -webkit-appearance: none; 
+        margin: 0; 
     }
-
-    .modal-dialog {
-      max-width: 100%;
-      margin: 0;
-    }
-
-    .modal-content {
-      height: 100vh;
+    input[type=number] {
+        -moz-appearance: textfield; /* Firefox */
     }
 
     /* Select2 Theme Customization */
@@ -158,7 +154,8 @@ if (!isset($_COOKIE["user_id"])) {
               </button>
               <div class="card-body">
                 <div class="table-responsive">
-                  <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0" style="font-size:85%">
+                  <table class="table table-hover table-sm" id="dataTable" width="100%" cellspacing="0"
+                    style="font-size:90%">
                     <thead class="btn-primary">
                       <tr>
                         <th>Trans ID</th>
@@ -168,6 +165,7 @@ if (!isset($_COOKIE["user_id"])) {
                         <th>Amount</th>
                         <th>Mode</th>
                         <th>Bank</th>
+                        <th>Reference</th>
                         <th>#</th>
 
                       </tr>
@@ -181,34 +179,48 @@ if (!isset($_COOKIE["user_id"])) {
                         <th>Amount</th>
                         <th>Mode</th>
                         <th>Bank</th>
+                        <th>Reference</th>
                         <th>#</th>
 
                       </tr>
                     </tfoot>
                     <tbody>
-                      <?php $sql = "SELECT p.*,a.account_name FROM payments p, account a where p.account=a.account_id and p.active_status='A' and p.nature='" . $now_nature . "' ORDER BY p.payment_id DESC LIMIT 100";
+                      <?php $sql = "SELECT p.*, a.account_name FROM payments p INNER JOIN account a ON p.account = a.account_id WHERE p.active_status = 'A' AND ('all' = 'all' OR p.nature = 'all') ORDER BY p.payment_id DESC LIMIT 100";
+
                       $result = $conn->query($sql);
 
-                      while ($row = $result->fetch_assoc()) { ?>
+                      while ($row = $result->fetch_assoc()) {
+                        $mode_class = ($row["mode"] == "CASH") ? "badge-success" : (($row["mode"] == "UPI") ? "badge-primary" : "badge-info");
+                        $display_name = trim(($row["vendor_name"] ?? '') . " " . ($row["customer_name"] ?? ''));
+                        $display_date = !empty($row["payment_date"]) ? date("d-M-Y", strtotime($row["payment_date"])) : "<span class='badge badge-warning text-dark'>NO DATE</span>";
+                        ?>
                         <TR>
-                          <td><b><?php echo $row["payment_id"]; ?></b>, Nature :<?php echo $row["nature"]; ?></td>
-                          <td> <b><?php echo $row["payment_date"]; ?></b></td>
-                          <td><b> <?php echo $row["vendor_name"]; ?></b>
-                            <?php echo $row["customer_name"]; ?></b>
+                          <td class="align-middle"><span
+                              class="text-primary font-weight-bold">#<?php echo $row["payment_id"]; ?></span></td>
+                          <td class="align-middle text-nowrap"><?php echo $display_date; ?></td>
+                          <td class="align-middle"><span
+                              class="font-weight-bold text-dark"><?php echo $display_name; ?></span></td>
+                          <td class="align-middle"><span
+                              class="font-weight-bold">₹<?php echo number_format($row["amount"], 0); ?></span></td>
+                          <td class="align-middle"><span
+                              class="badge <?php echo $mode_class; ?>"><?php echo $row["mode"]; ?></span></td>
+                          <td class="align-middle text-muted" style="font-size: 0.9em;">
+                            <?php echo $row["account_name"]; ?>
                           </td>
-                          <td>₹<?php echo $row["amount"]; ?></td>
-                          <td> <?php echo $row["mode"]; ?></td>
-                          <td><?php echo $row["account_name"]; ?>
+                          <td class="align-middle text-muted" style="font-size: 0.9em;"><?php echo $row["reference"]; ?>
                           </td>
-                          <td>
-                            <button class="btn btn-danger btn-sm"
-                              onclick="delete_it('<?php echo $row["payment_id"]; ?>','<?php echo $row["nature"]; ?>','<?php echo $row["account"]; ?>','<?php echo $row["account_to"]; ?>','<?php echo $row["amount"]; ?>','<?php echo $row["mode"]; ?>')">X</button>
+                          <td class="align-middle text-nowrap">
+                            <button class="btn btn-outline-danger btn-sm border-0" title="Delete"
+                              onclick="delete_it('<?php echo $row["payment_id"]; ?>','<?php echo $row["nature"]; ?>','<?php echo $row["account"]; ?>','<?php echo $row["account_to"]; ?>','<?php echo $row["amount"]; ?>','<?php echo $row["mode"]; ?>')">
+                              <i class="fas fa-trash-alt"></i>
+                            </button>
                             <?php if (($row["nature"] == "DEBIT" || $row["nature"] == "CREDIT") && ($row["verified"] == "N")) { ?>
-
-                              <button class="btn btn-success btn-sm"
-                                onclick="approve_pay('<?php echo $row["payment_id"]; ?>','<?php echo $row["nature"]; ?>','<?php echo $row["amount"]; ?>')">Approve</button>
+                              <button class="btn btn-success btn-sm ml-1" title="Approve"
+                                onclick="approve_pay('<?php echo $row["payment_id"]; ?>','<?php echo $row["nature"]; ?>','<?php echo $row["amount"]; ?>')">
+                                <i class="fas fa-check-circle"></i>
+                              </button>
                             <?php } ?>
-
+                          </td>
                         </TR>
                       <?php } ?>
                     </tbody>
@@ -241,156 +253,169 @@ if (!isset($_COOKIE["user_id"])) {
 
 
   <div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-fullscreen" role="document">
-      <div class="modal-content fullscreen-modal">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+      <div class="modal-content shadow">
 
         <div class="modal-header">
-          <h5 class="modal-title">Add</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <h5 class="modal-title font-weight-bold">Add Transaction</h5>
+          <button type="button" class="close text-white" data-dismiss="modal" data-bs-dismiss="modal"
+            aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
 
-        <div class="modal-body" id="">
-          <table class="table table-striped">
-            <tr>
-              <td>Date of Trnsaction</td>
-              <td><input type="text" id="datepicker" class="form-control"></td>
-            </tr>
-            <tr>
-              <td>Nature</td>
-              <td><select type="text" class="form-control" id="nature" onchange="set_vendor_customer()">
-                  <option value="">--Select--</option>
-                  <option value="DEBIT">PAYMENT</option>
-                  <option value="CREDIT">RECEIPT</option>
-                  <?PHP if (isset($_COOKIE["SA"])) { ?>
-                    <option value="CASHTOBANK">CASH TO BANK</option>
-                    <option value="BANKTOCASH">BANK TO CASH</option>
-                    <option value="BANKTOBANK">BANK TO BANK</option>
-                  <?PHP } ?>
-                </select></td>
-            </tr>
-            <tr>
-              <td>Vendor</td>
-              <td>
-                <select class="form-control select2-vendor" id="vendor">
-                  <option value="">--Select Vendor--</option>
-                </select>
-              </td>
-            </tr>
-            <tr>
-              <td>Customer</td>
-              <td>
-                <select class="form-control select2-customer" id="customer">
-                  <option value="">--Select Customer--</option>
-                </select>
-              </td>
-            </tr>
-            <tr>
-              <td>Mode</td>
-              <td><select type="text" class="form-control" id="mode" onchange="filter_account()">
-                  <option value="">--Select--</option>
-                  <?php $sql = "SELECT paytype_id,paytype_name FROM paytype order by 1";
-                  $result = $conn->query($sql);
-                  while ($row = $result->fetch_assoc()) {
-                    ?>
-                    <option value="<?php echo $row['paytype_id']; ?>~<?php echo $row['paytype_name']; ?>">
-                      <?php echo $row['paytype_name']; ?>
-                    </option>
-                  <?php } ?>
-                </select></td>
-            </tr>
-            <tr>
-              <td>Account (From in case of Transfer)</td>
-              <td><select type="text" class="form-control" id="account">
-                  <option value="">--Select--</option>
-                  <?php $sql = "SELECT account_id,account_name,paytype_id FROM account order by 1";
-                  $result = $conn->query($sql);
-                  while ($row = $result->fetch_assoc()) {
-                    ?>
-                    <option value="<?php echo $row['paytype_id']; ?>~<?php echo $row['account_id']; ?>">
-                      <?php echo $row['account_name']; ?>
-                    </option>
-                  <?php } ?>
-                </select></td>
-            </tr>
-            <tr>
-              <td>Account (To in case of Transfer)</td>
-              <td><select type="text" class="form-control" id="account_to">
-                  <option value="">--Select--</option>
-                  <?php $sql = "SELECT account_id,account_name,paytype_id FROM account order by 1";
-                  $result = $conn->query($sql);
-                  while ($row = $result->fetch_assoc()) {
-                    ?>
-                    <option value="<?php echo $row['paytype_id']; ?>~<?php echo $row['account_id']; ?>">
-                      <?php echo $row['account_name']; ?>
-                    </option>
-                  <?php } ?>
-                </select></td>
-            </tr>
-            <tr>
-              <td>Amount</td>
-              <td><input type="number" id="amount" name="amount"></td>
-            </tr>
-            <tr>
-              <td>Reference</td>
-              <td><input type="text" id="reference" name="reference"></td>
-            </tr>
+        <div class="modal-body p-4" style="overflow-y: auto; max-height: 80vh;">
+          <div class="row">
+            <!-- Date of Transaction -->
+            <div class="col-md-12 mb-3">
+              <label class="form-label font-weight-bold text-dark">Date of Transaction</label>
+              <input type="text" id="payment_datepicker" class="form-control" style="height: 38px;">
+              <input type="hidden" id="nature" value="CREDIT">
+            </div>
+          </div>
 
-          </table>
+          <div class="row">
+            <!-- Receipt Type -->
+            <div class="col-md-12 mb-3" id="receipt_type_row" style="display:none;">
+              <label class="form-label font-weight-bold text-dark">Receipt Type</label>
+              <select class="form-control" id="receipt_type" style="height: 38px;">
+                <option value="sales">Sales Bills</option>
+                <option value="service">Service Bills</option>
+              </select>
+            </div>
+
+            <!-- Vendor -->
+            <div class="col-md-12 mb-3" id="vendor_row">
+              <label class="form-label font-weight-bold text-dark">Vendor</label>
+              <select class="form-control select2-vendor" id="vendor" style="width: 100%;">
+                <option value="">--Select Vendor--</option>
+              </select>
+              <div id="vendor_pending_balance" class="mt-2" style="font-weight: bold; display: none;"></div>
+            </div>
+
+            <!-- Customer -->
+            <div class="col-md-12 mb-3" id="customer_row">
+              <label class="form-label font-weight-bold text-dark">Customer</label>
+              <select class="form-control select2-customer" id="customer" style="width: 100%;">
+                <option value="">--Select Customer--</option>
+              </select>
+              <div id="customer_pending_balance" class="mt-2" style="font-weight: bold; display: none;"></div>
+            </div>
+          </div>
+
+          <div class="row">
+            <!-- Mode -->
+            <div class="col-md-6 mb-3" id="mode_row">
+              <label class="form-label font-weight-bold text-dark">Mode</label>
+              <select class="form-control" id="mode" onchange="filter_account()" style="height: 38px;">
+                <option value="">--Select--</option>
+                <?php $sql = "SELECT paytype_id,paytype_name FROM paytype order by 1";
+                $result = $conn->query($sql);
+                while ($row = $result->fetch_assoc()) {
+                  ?>
+                  <option value="<?php echo $row['paytype_id']; ?>~<?php echo $row['paytype_name']; ?>">
+                    <?php echo $row['paytype_name']; ?>
+                  </option>
+                <?php } ?>
+              </select>
+            </div>
+
+            <!-- Account / From Account -->
+            <div class="col-md-6 mb-3" id="account_row">
+              <label class="form-label font-weight-bold text-dark" id="account_label">Account</label>
+              <select class="form-control" id="account" style="height: 38px;">
+                <option value="">--Select--</option>
+                <?php $sql = "SELECT account_id,account_name,paytype_id FROM account order by 1";
+                $result = $conn->query($sql);
+                while ($row = $result->fetch_assoc()) {
+                  ?>
+                  <option value="<?php echo $row['paytype_id']; ?>~<?php echo $row['account_id']; ?>">
+                    <?php echo $row['account_name']; ?>
+                  </option>
+                <?php } ?>
+              </select>
+            </div>
+
+            <!-- Account To (Transfer) -->
+            <div class="col-md-6 mb-3" id="account_to_row">
+              <label class="form-label font-weight-bold text-dark">To Account</label>
+              <select class="form-control" id="account_to" style="height: 38px;">
+                <option value="">--Select--</option>
+                <?php $sql = "SELECT account_id,account_name,paytype_id FROM account order by 1";
+                $result = $conn->query($sql);
+                while ($row = $result->fetch_assoc()) {
+                  ?>
+                  <option value="<?php echo $row['paytype_id']; ?>~<?php echo $row['account_id']; ?>">
+                    <?php echo $row['account_name']; ?>
+                  </option>
+                <?php } ?>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <!-- Amount -->
+            <div class="col-md-6 mb-3">
+              <label class="form-label font-weight-bold text-dark">Amount</label>
+              <input type="number" id="amount" name="amount" class="form-control" placeholder="Enter Amount"
+                style="height: 38px;">
+            </div>
+
+            <!-- Reference -->
+            <div class="col-md-6 mb-3">
+              <label class="form-label font-weight-bold text-dark">Reference / Remarks</label>
+              <input type="text" id="reference" name="reference" class="form-control"
+                placeholder="Enter Reference/Remarks" style="height: 38px;">
+            </div>
+          </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-success" id="add">Save</button>
-
-
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary px-4" data-dismiss="modal"
+            data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-success px-4" id="add">Save</button>
         </div>
       </div>
     </div>
   </div>
 
   <div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-      <div class="modal-content">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content shadow">
 
         <div class="modal-header">
-          <h5 class="modal-title">Edit</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <h5 class="modal-title font-weight-bold">Edit Transaction</h5>
+          <button type="button" class="close text-white" data-dismiss="modal" data-bs-dismiss="modal"
+            aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
 
-        <div class="modal-body" id="">
-          <table class="table table-striped">
-            <tr>
-              <td>Date of Trnsaction</td>
-              <td><input type="text" id="edit_datepicker" class="form-control"></td>
-            </tr>
-            <tr>
-              <td>Details</td>
-              <td><input type="text" class="form-control" id="edit_details"></td>
-            </tr>
-            <tr>
-              <td>Vendor</td>
-              <td><input class="form-control" id="edit_vendor" list="edit_vendor_list">
-                <?php $sql = "SELECT vendor_id,company_name FROM vendor order by 1";
-                $result = $conn->query($sql); ?>
-                <datalist id="edit_vendor_list">
-                  <?php while ($row = $result->fetch_assoc()) { ?>
-                    <option value="<?php echo $row['vendor_id']; ?>~<?php echo $row['company_name']; ?>"></option>
-                  <?php } ?>
-                </datalist>
-                </select>
-                <input type='HIDDEN' name="trans_id" id="trans_id">
-              </td>
-            </tr>
-          </table>
+        <div class="modal-body p-4">
+          <div class="form-group mb-3">
+            <label class="form-label font-weight-bold text-dark">Date of Transaction</label>
+            <input type="text" id="edit_datepicker" class="form-control" style="height: 38px;">
+          </div>
+          <div class="form-group mb-3">
+            <label class="form-label font-weight-bold text-dark">Details</label>
+            <input type="text" class="form-control" id="edit_details" style="height: 38px;">
+          </div>
+          <div class="form-group mb-3">
+            <label class="form-label font-weight-bold text-dark">Vendor</label>
+            <input class="form-control" id="edit_vendor" list="edit_vendor_list" style="height: 38px;">
+            <?php $sql = "SELECT vendor_id,company_name FROM vendor order by 1";
+            $result = $conn->query($sql); ?>
+            <datalist id="edit_vendor_list">
+              <?php while ($row = $result->fetch_assoc()) { ?>
+                <option value="<?php echo $row['vendor_id']; ?>~<?php echo $row['company_name']; ?>"></option>
+              <?php } ?>
+            </datalist>
+            <input type='HIDDEN' name="trans_id" id="trans_id">
+          </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-success" id="edit">Save</button>
-
-
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary px-4" data-dismiss="modal"
+            data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-success px-4" id="edit">Save</button>
         </div>
       </div>
     </div>
@@ -407,6 +432,16 @@ if (!isset($_COOKIE["user_id"])) {
     var addModal = new bootstrap.Modal(document.getElementById('addModal'));
     var editModal = new bootstrap.Modal(document.getElementById('editModal'));
     $(document).ready(function () {
+      // Disable scroll wheel and up/down arrows on number inputs
+      $(document).on('wheel', 'input[type=number]', function (e) {
+          $(this).blur();
+      });
+      $(document).on('keydown', 'input[type=number]', function(e) {
+          if (e.which == 38 || e.which == 40) {
+              e.preventDefault();
+          }
+      });
+
       document.getElementById("nature").value = "<?php echo $now_nature; ?>";
       set_vendor_customer();
 
@@ -416,11 +451,12 @@ if (!isset($_COOKIE["user_id"])) {
         ajax: {
           url: 'search_customers_ajax.php',
           dataType: 'json',
-          delay: 250,
+          delay: 300,
           data: function (params) {
             return {
               q: params.term,
-              page: params.page || 1
+              page: params.page || 1,
+              receipt_type: $('#receipt_type').is(':visible') ? $('#receipt_type').val() : ''
             };
           },
           processResults: function (data, params) {
@@ -445,7 +481,7 @@ if (!isset($_COOKIE["user_id"])) {
         ajax: {
           url: 'search_vendors_ajax.php',
           dataType: 'json',
-          delay: 250,
+          delay: 300,
           data: function (params) {
             return {
               q: params.term,
@@ -474,9 +510,13 @@ if (!isset($_COOKIE["user_id"])) {
           '<div class="select2-result-item">' +
           '<span class="select2-result-title">' + state.text + '</span>' +
           (state.mobile ? '<span class="select2-result-mobile"><i class="fas fa-phone-alt mr-1"></i> ' + state.mobile + '</span>' : '') +
-          (state.pending && parseFloat(state.pending.replace(/,/g, '')) > 0 ? '<div class="select2-result-pending">Pending Balance: ₹ ' + state.pending + '</div>' : '') +
-          (state.vehicles ? '<div class="select2-result-row" style="margin-top:8px"><span class="select2-result-label">Vehicles:</span><span class="select2-result-val">' + state.vehicles + '</span></div>' : '') +
-          (state.address ? '<div class="select2-result-row"><span class="select2-result-label">Address:</span><span class="select2-result-val">' + state.address + '</span></div>' : '') +
+          (function () {
+            if (state.pending === undefined || state.pending === null) return '';
+            let num = parseFloat(String(state.pending).replace(/,/g, ''));
+            if (num === 0) return '<div class="select2-result-pending" style="background:#f0f0f0;color:#555;">No Pending Balance</div>';
+            if (num < 0) return '<div class="select2-result-pending" style="color:red;">Pending Balance: ₹ ' + state.pending + '</div>';
+            return '<div class="select2-result-pending">Pending Balance: ₹ ' + state.pending + '</div>';
+          })() +
           '</div>'
         );
         return $state;
@@ -487,7 +527,14 @@ if (!isset($_COOKIE["user_id"])) {
         var $state = $(
           '<div class="select2-result-item">' +
           '<span class="select2-result-title">' + state.text + '</span>' +
-          (state.details ? '<div class="select2-result-row"><span class="select2-result-label">Owner:</span><span class="select2-result-val">' + state.details + '</span></div>' : '') +
+          (function () {
+            if (!state.pending) return '';
+            let num = parseFloat(state.pending.replace(/,/g, ''));
+            if (num === 0) return '';
+            if (num < 0) return '<div class="select2-result-pending" style="color:red;">Pending Balance: ₹ ' + state.pending + '</div>';
+            return '<div class="select2-result-pending">Pending Balance: ₹ ' + state.pending + '</div>';
+          })() +
+          (state.details ? '<div class="select2-result-row" style="margin-top:8px"><span class="select2-result-label">Owner:</span><span class="select2-result-val">' + state.details + '</span></div>' : '') +
           '</div>'
         );
         return $state;
@@ -496,12 +543,58 @@ if (!isset($_COOKIE["user_id"])) {
       function formatSelection(state) {
         return state.text;
       }
+
+      $('#receipt_type').on('change', function () {
+        $('#customer').val(null).trigger('change');
+      });
+
+      // Handle customer selection event to show pending balance
+      $('.select2-customer').on('select2:select', function (e) {
+        var data = e.params.data;
+        if (data && data.pending !== undefined && data.pending !== null) {
+          let num = parseFloat(String(data.pending).replace(/,/g, ''));
+          let color, label;
+          if (num === 0) {
+            color = '#555'; label = 'No Pending Balance';
+            $('#customer_pending_balance').html('<span style="color:' + color + '; font-weight: 800;">' + label + '</span>').show();
+          } else {
+            color = num < 0 ? 'red' : 'green';
+            $('#customer_pending_balance').html('Pending Balance: <span style="color:' + color + '; font-weight: 800;">₹ ' + data.pending + '</span>').show();
+          }
+        } else {
+          $('#customer_pending_balance').html('<span style="color:#555; font-weight: 800;">Pending Balance: ₹ 0.00</span>').show();
+        }
+      });
+
+      $('.select2-customer').on('change', function () {
+        if (!$(this).val()) {
+          $('#customer_pending_balance').hide().html('');
+        }
+      });
+
+      // Handle vendor selection event to show pending balance
+      $('.select2-vendor').on('select2:select', function (e) {
+        var data = e.params.data;
+        if (data && data.pending) {
+          let num = parseFloat(data.pending.replace(/,/g, ''));
+          let color = num < 0 ? 'red' : 'green';
+          $('#vendor_pending_balance').html('Pending Balance: <span style="color:' + color + '; font-weight: 800;">₹ ' + data.pending + '</span>').show();
+        } else {
+          $('#vendor_pending_balance').hide().html('');
+        }
+      });
+
+      $('.select2-vendor').on('change', function () {
+        if (!$(this).val()) {
+          $('#vendor_pending_balance').hide().html('');
+        }
+      });
     });
 
 
 
     $(function () {
-      $("#datepicker").datepicker({
+      $("#payment_datepicker").datepicker({
         dateFormat: "dd-mm-yy"  // Set format to yyyy-mm-dd
       }).datepicker("setDate", new Date());;
       $("#edit_datepicker").datepicker({
@@ -524,7 +617,7 @@ if (!isset($_COOKIE["user_id"])) {
 
     $('#add').on('click', function (e) {
       let vendor = "", vendor_name = "", customer = "", customer_name = "";
-      let payment_date = $("#datepicker").val();
+      let payment_date = $("#payment_datepicker").val();
       let nature = $("#nature").val();
 
       let v_val = $("#vendor").val();
@@ -548,7 +641,9 @@ if (!isset($_COOKIE["user_id"])) {
 
       let amount = $("#amount").val();
       let reference = $("#reference").val();
-      $.post("add_payment.php",
+      let receipt_type = $("#receipt_type").val();
+      $.post(
+        "add_payment.php",
         {
           payment_date: payment_date,
           nature: nature,
@@ -560,15 +655,38 @@ if (!isset($_COOKIE["user_id"])) {
           account: account,
           account_to: account_to,
           amount: amount,
-          reference: reference
+          reference: reference,
+          receipt_type: receipt_type
+        },
+        function (response) {
 
+          if (response.status === "success") {
+
+            alert(
+              response.message +
+              "\nPayment ID : " + response.payment_id
+            );
+
+            location.reload();
+
+          } else {
+
+            alert(response.message);
+          }
 
         },
-        function (data, status) {
-          alert($.trim(data));
-          console.log($.trim(data));
-          location.reload();
-        });
+        "json"
+      ).fail(function (xhr, status, error) {
+
+        console.error(xhr.responseText);
+
+        alert(
+          "Error while saving payment.\n\n" +
+          "Status : " + status + "\n" +
+          "Error : " + error
+        );
+
+      });
 
 
     });
@@ -594,26 +712,53 @@ if (!isset($_COOKIE["user_id"])) {
     });
     function set_vendor_customer() {
       let nature = document.getElementById("nature").value;
+
+      // Reset pending balance displays
+      $('#customer_pending_balance').hide().html('');
+      $('#vendor_pending_balance').hide().html('');
+
+      // Default: hide/show sections
+      $("#receipt_type_row").hide();
+      $("#vendor_row").hide();
+      $("#customer_row").hide();
+      $("#mode_row").show();
+      $("#account_row").show();
+      $("#account_to_row").hide();
+
+      // Reset disabled states for form inputs
+      document.getElementById("vendor").disabled = true;
+      document.getElementById("customer").disabled = true;
+      document.getElementById("account_to").disabled = true;
+      document.getElementById("mode").disabled = false;
+      document.getElementById("account").disabled = false;
+
+      // Reset Account label
+      document.getElementById("account_label").innerText = "Account";
+
       if (nature == "DEBIT") {
+        $("#vendor_row").show();
         document.getElementById("vendor").disabled = false;
         document.getElementById("customer").disabled = true;
         document.getElementById("account_to").disabled = true;
       } else if (nature == "CREDIT") {
+        $("#receipt_type_row").show();
+        $("#customer_row").show();
         document.getElementById("vendor").disabled = true;
         document.getElementById("customer").disabled = false;
         document.getElementById("account_to").disabled = true;
-
       } else {
+        // Transfer natures (CASHTOBANK, BANKTOCASH, BANKTOBANK)
+        $("#mode_row").hide();
+        $("#account_to_row").show();
+
         document.getElementById("vendor").disabled = true;
         document.getElementById("customer").disabled = true;
         document.getElementById("mode").disabled = true;
-        //if(document.getElementById("nature").value=="BANKTOBANK")
-        { document.getElementById("account_to").disabled = false; }
-        /*else
-        {document.getElementById("account_to").disabled=true;}*/
+        document.getElementById("account_to").disabled = false;
+
+        // Dynamically change account label to "From Account"
+        document.getElementById("account_label").innerText = "From Account";
       }
-
-
     }
     function filter_account() {
       let mode_val = document.getElementById("mode").value;
@@ -622,15 +767,14 @@ if (!isset($_COOKIE["user_id"])) {
         return;
       }
       let pay_type = mode_val.split("~")[0];
-      
+
       // Reset disabled status first to allow re-filtering
       $('#account option, #account_to option').prop('disabled', false);
 
-      $('#account option, #account_to option').each(function() {
+      $('#account option, #account_to option').each(function () {
         let val = $(this).val();
         if (val !== "") {
           let acc_pay_type = val.split("~")[0];
-          // Use exact match to avoid ID overlap issues (e.g. ID "3" matching "1000003")
           if (acc_pay_type !== pay_type) {
             $(this).prop('disabled', true);
           }
@@ -643,6 +787,18 @@ if (!isset($_COOKIE["user_id"])) {
       }
       if ($('#account_to option:selected').is(':disabled')) {
         $('#account_to').val("");
+      }
+
+      // Auto-select account if only one option matches the selected mode
+      let enabledAccounts = $('#account option:enabled').not('[value=""]');
+      if (enabledAccounts.length === 1) {
+        $('#account').val(enabledAccounts.first().val());
+      }
+
+      // Auto-select account_to if only one option matches
+      let enabledAccountsTo = $('#account_to option:enabled').not('[value=""]');
+      if (enabledAccountsTo.length === 1) {
+        $('#account_to').val(enabledAccountsTo.first().val());
       }
     }
 
@@ -680,14 +836,13 @@ if (!isset($_COOKIE["user_id"])) {
             account_to: account_to,
             amount: amount,
             mode: mode
-
           },
           function (data, status) {
-            alert($.trim(data));
+            let response = typeof data === "object" ? data : JSON.parse(data);
+            alert(response.message || response);
             location.reload();
           });
       }
-
     }
     function approve_pay(trans_id, nature, amount) {
       var r = confirm("Are you sure that you want to approve the transaction");

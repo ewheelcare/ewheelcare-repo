@@ -1,7 +1,6 @@
 <?php
 include 'db_config.php';
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
 function esc($conn, $val) {
     return mysqli_real_escape_string($conn, trim($val));
 }
@@ -15,7 +14,6 @@ function isValidPerc($val) {
     return isValidNum($val) && (float)$val <= 100;
 }
 
-// ── Read inputs ───────────────────────────────────────────────────────────────
 $item_id          = isset($_POST['item_id']) ? intval($_POST['item_id']) : 0;
 $has_subitems     = isset($_POST['has_subitems']) ? intval($_POST['has_subitems']) : 0;
 $sub_items_raw    = isset($_POST['sub_items']) ? $_POST['sub_items'] : '[]';
@@ -31,7 +29,6 @@ $hsn                = esc($conn, $_POST['hsn']                ?? '');
 $purchase_tax_cgst  = esc($conn, $_POST['purchase_tax_cgst']  ?? '');
 $purchase_tax_igst  = esc($conn, $_POST['purchase_tax_igst']  ?? '');
 
-// ── Server-side validation: parent fields ────────────────────────────────────
 if ($item_name === '')        { echo 'Item Name is required.';        exit; }
 if ($item_description === '') { echo 'Item Description is required.'; exit; }
 if ($hsn === '')              { echo 'HSN is required.';              exit; }
@@ -42,7 +39,6 @@ if (!isValidPerc($tax_pc_sgst))     { echo 'Tax SGST must be a number between 0 
 if (!isValidPerc($purchase_tax_cgst)) { echo 'Purchase Tax CGST must be a number 0–100.';      exit; }
 if (!isValidPerc($purchase_tax_igst)) { echo 'Purchase Tax IGST must be a number 0–100.';      exit; }
 
-// ── Server-side validation: sub items ────────────────────────────────────────
 if ($has_subitems && count($sub_items) > 0) {
     $total_perc = 0;
     foreach ($sub_items as $idx => $si) {
@@ -71,12 +67,10 @@ if ($has_subitems && count($sub_items) > 0) {
     }
 }
 
-// ── Transaction ───────────────────────────────────────────────────────────────
 $conn->begin_transaction();
 
 try {
 
-    // ── STEP 1: Insert or Update Parent Item ─────────────────────────────────
     if ($item_id === 0) {
 
         $sql = "INSERT INTO item
@@ -109,7 +103,6 @@ try {
             throw new Exception('Failed to update parent item: ' . $conn->error);
         }
 
-        // Collect incoming sub item IDs (existing ones being kept)
         $incoming_ids = [];
         foreach ($sub_items as $si) {
             if (!empty($si['item_id'])) {
@@ -117,10 +110,9 @@ try {
             }
         }
 
-        // Soft-delete sub items that were removed from the screen
         $prev_result = $conn->query(
-            "SELECT item_id FROM groupassociation
-             WHERE itemgroup_id = $item_id AND item_id <> itemgroup_id"
+            "SELECT item_id FROM item_association
+             WHERE item_group_id = $item_id AND item_id <> item_group_id"
         );
         while ($prev_result && $prev_row = $prev_result->fetch_assoc()) {
             $prev_sub_id = intval($prev_row['item_id']);
@@ -129,11 +121,9 @@ try {
             }
         }
 
-        // Clear groupassociation for this parent (rebuild below)
-        $conn->query("DELETE FROM groupassociation WHERE itemgroup_id = $item_id");
+        $conn->query("DELETE FROM item_association WHERE item_group_id = $item_id");
     }
 
-    // ── STEP 2: Process Sub Items ─────────────────────────────────────────────
     $saved_subs = [];
 
     if ($has_subitems && count($sub_items) > 0) {
@@ -147,7 +137,6 @@ try {
             $si_id          = isset($si['item_id']) ? intval($si['item_id']) : 0;
 
             if ($si_id === 0) {
-                // INSERT new sub item — uses its own hsn; inherits tax/tyre/price from parent
                 $ins = "INSERT INTO item
                             (item_name, item_description, cost,
                              tax_pc, tax_pc_sgst, hsn,
@@ -162,7 +151,6 @@ try {
                 $si_id = $conn->insert_id;
 
             } else {
-                // UPDATE existing sub item — name, description, hsn, cost
                 $upd = "UPDATE item SET
                             item_name        = '$si_name',
                             item_description = '$si_description',
@@ -178,22 +166,20 @@ try {
         }
     }
 
-    // ── STEP 3: Rebuild groupassociation ─────────────────────────────────────
 
     // Sub item rows
     $sub_total = 0;
     foreach ($saved_subs as $s) {
         $sub_total += $s['perc'];
         $conn->query(
-            "INSERT INTO groupassociation (itemgroup_id, item_id, perc)
+            "INSERT INTO item_association (item_group_id, item_id, price_per_cont)
              VALUES ($item_id, {$s['item_id']}, {$s['perc']})"
         );
     }
 
-    // Parent remaining row (self-referencing)
     $parent_perc = round(max(0, 100 - $sub_total), 4);
     $conn->query(
-        "INSERT INTO groupassociation (itemgroup_id, item_id, perc)
+        "INSERT INTO item_association (item_group_id, item_id, price_per_cont)
          VALUES ($item_id, $item_id, $parent_perc)"
     );
 

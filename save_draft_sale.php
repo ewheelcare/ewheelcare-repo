@@ -1,13 +1,46 @@
 <?php
+
+session_start();
+
 include "db_config.php";
 
-$trans_id     = $_POST["value"];
-$trans_amount = $_POST["trans_amount"];
-$roundoff     = $_POST["roundoff"];
-$discount     = $_POST["discount"];
-$ver          = $_POST["ver"];
+header('Content-Type: application/json');
 
-$user_id = isset($_COOKIE["user_id"]) ? $_COOKIE["user_id"] : '';
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
+date_default_timezone_set("Asia/Kolkata");
+
+try {
+
+    $user_id = $_SESSION['user_id'] ?? null;
+    $shop_id = $_SESSION['shop'] ?? null;
+
+    if (!$user_id) {
+        throw new Exception("Session expired. Please login again.");
+    }
+
+    if (!$shop_id) {
+        throw new Exception("Shop not found in session.");
+    }
+
+    $trans_id     = trim($_POST["value"] ?? '');
+    $trans_amount = floatval($_POST["trans_amount"] ?? 0);
+    $roundoff     = floatval($_POST["roundoff"] ?? 0);
+    $discount     = floatval($_POST["discount"] ?? 0);
+    $ver          = trim($_POST["ver"] ?? '');
+    
+    if ($trans_id === '') {
+        throw new Exception("Transaction ID Missing");
+    }
+
+    if (!isset($_POST["ver"])) {
+    throw new Exception("Version Missing");
+      }
+
+    $conn->begin_transaction();
 
 $sql = "
 SELECT IFNULL(SUM(total),0) GRAND_TOTAL
@@ -21,10 +54,11 @@ WHERE
 
 $result = $conn->query($sql);
 
+
 $grand_total = 0;
 
 if($row = $result->fetch_assoc()) {
-    $grand_total = $row["GRAND_TOTAL"];
+    $grand_total = floatval($row["GRAND_TOTAL"]);
 }
 
 /*
@@ -39,9 +73,8 @@ Keep current logic.
 
 $final_amount = $grand_total - $discount + $roundoff;
 
-$conn->begin_transaction();
 
-try {
+
 
     /*
      * Update Sales Header
@@ -66,13 +99,11 @@ try {
 
     //$conn->query($sql);
 
-    if(!$conn->query($sql)){
-        die($conn->error);
-    }
+    $conn->query($sql);
+     
+    
 
-    $conn->commit();
-
-    // echo "UPDATED AND COMMITTED";
+       // echo "UPDATED AND COMMITTED";
     // exit;
 
     // if(!$conn->query($sql)){
@@ -90,24 +121,12 @@ try {
         AND ver='".$ver."'
     ";
 
-    // if(!$conn->query($sql_cleanup)){
-    //     throw new Exception($conn->error);
-    // }
-
-    // /*
-    // * REVERSE OLD INVENTORY POSTING
-    // */
-    // $sql = "
-    // SELECT item_id, qty, shop_id
-    // FROM inventory_trans
-    // WHERE trans_id='".$trans_id."'
-    // AND trans_type='SALE'
-    // ";
-
+    
     if(!$conn->query($sql_cleanup)){
        throw new Exception($conn->error);
     }
 
+     
 
 
 /*
@@ -121,6 +140,7 @@ AND trans_type='SALE'
 ";
 
     $result = $conn->query($sql);
+
 
     while($row = $result->fetch_assoc()){
 
@@ -154,6 +174,7 @@ AND trans_type='SALE'
     }
 
 
+
     /*
  * VALIDATE STOCK BEFORE SAVE
  */
@@ -175,6 +196,7 @@ GROUP BY item_id, shop_id
 
 $result_validate = $conn->query($sql_validate);
 
+
 while($row_validate = $result_validate->fetch_assoc()){
 
     $item_id = $row_validate["item_id"];
@@ -190,6 +212,7 @@ while($row_validate = $result_validate->fetch_assoc()){
     ";
 
     $result_stock = $conn->query($sql_stock);
+
 
     if(!$result_stock || $result_stock->num_rows == 0){
         throw new Exception(
@@ -227,6 +250,7 @@ while($row_validate = $result_validate->fetch_assoc()){
 
         $result = $conn->query($sql);
 
+
         while($row = $result->fetch_assoc()){
 
             /*
@@ -246,6 +270,7 @@ while($row_validate = $result_validate->fetch_assoc()){
             if(!$conn->query($sql_stock)){
                 throw new Exception($conn->error);
             }
+
 
             /*
             * INSERT INVENTORY TRANS
@@ -276,19 +301,36 @@ while($row_validate = $result_validate->fetch_assoc()){
             if(!$conn->query($sql_trans)){
                 throw new Exception($conn->error);
             }
+            
+
         }
 
     $conn->commit();
 
-    echo "SUCCESS";
-
+echo json_encode([
+    "status"      => "success",
+    "trans_id"    => $trans_id,
+    "message"     => "Sales Saved Successfully"
+]);
 }
-catch(Exception $e){
+catch(Throwable $e){
 
-    $conn->rollback();
+    if($conn){
+        $conn->rollback();
+    }
 
-    echo "Error : ".$e->getMessage();
+    error_log(
+        "ERP | save_draft_sale.php | ".
+        date("Y-m-d H:i:s").
+        " | User:".($user_id ?? 'UNKNOWN').
+        " | Trans:".($trans_id ?? '').
+        " | Error:".$e->getMessage()
+    );
+
+    echo json_encode([
+        "status"  => "error",
+        "message" => $e->getMessage()
+    ]);
 }
-
 $conn->close();
 ?>

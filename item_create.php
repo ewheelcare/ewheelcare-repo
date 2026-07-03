@@ -24,13 +24,12 @@ if ($item_id > 0) {
         $item = $r->fetch_assoc();
     }
 
-    // Load sub items — excludes parent-to-self groupassociation row
     $r2 = $conn->query(
-        "SELECT g.perc, i.*
-         FROM groupassociation g
+         "SELECT g.price_per_cont AS perc, i.*
+         FROM item_association g
          INNER JOIN item i ON g.item_id = i.item_id
-         WHERE g.itemgroup_id = " . $item_id . "
-           AND g.item_id <> g.itemgroup_id"
+         WHERE g.item_group_id = " . $item_id . "
+           AND g.item_id <> g.item_group_id"
     );
     while ($r2 && $m = $r2->fetch_assoc()) {
         $subItems[] = $m;
@@ -258,24 +257,21 @@ label { color: #000 !important; font-weight: 600; }
 <script>
 var subItemIndex = <?= count($subItems) ?>;
 
-// ── Helper: is value a valid non-negative number? ────────────────────────────
+
 function isValidNum(val) {
     var v = $.trim(val);
     return v !== '' && !isNaN(v) && parseFloat(v) >= 0;
 }
 
-// ── Helper: is value a valid percentage (0–100)? ─────────────────────────────
 function isValidPerc(val) {
     return isValidNum(val) && parseFloat(val) <= 100;
 }
 
-// ── Toggle sub items block ───────────────────────────────────────────────────
 $('#has_subitems').change(function () {
     $('#subItemsBlock').toggle(this.checked);
     calcPerc();
 });
 
-// ── Add sub item card ────────────────────────────────────────────────────────
 $('#addSubItem').click(function () {
     var idx = subItemIndex++;
     var card = `
@@ -311,7 +307,6 @@ $('#addSubItem').click(function () {
     calcPerc();
 });
 
-// ── Remove sub item card ─────────────────────────────────────────────────────
 $(document).on('click', '.btn-remove-sub', function () {
     $(this).closest('.sub-item-card').remove();
     renumberCards();
@@ -324,7 +319,6 @@ function renumberCards() {
     });
 }
 
-// ── Percentage calculation ───────────────────────────────────────────────────
 $(document).on('input change', '.si-perc', calcPerc);
 
 function calcPerc() {
@@ -366,7 +360,6 @@ function calcPerc() {
     }
 }
 
-// ── Duplicate name check (warning only) ─────────────────────────────────────
 var nameCheckTimer = null;
 $('#item_name').on('input', function () {
     clearTimeout(nameCheckTimer);
@@ -381,7 +374,6 @@ $('#item_name').on('input', function () {
     }, 500);
 });
 
-// ── Client-side validation ───────────────────────────────────────────────────
 function validateParent() {
 
     var ok = true;
@@ -429,7 +421,6 @@ function validateParent() {
     return true;
 }
 
-// ── Save ─────────────────────────────────────────────────────────────────────
 $('#saveItem').click(function () {
 
     if (!validateParent()) return;

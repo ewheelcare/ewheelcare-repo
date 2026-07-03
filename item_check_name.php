@@ -1,9 +1,5 @@
 <?php
-/**
- * item_check_name.php
- * Returns "1" if the name already exists (warning only — not a blocker).
- * Called via AJAX from item_create.php
- */
+
 include 'db_config.php';
 
 $name    = mysqli_real_escape_string($conn, trim($_GET['item_name'] ?? ''));

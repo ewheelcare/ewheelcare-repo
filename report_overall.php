@@ -97,78 +97,98 @@ if (!isset($_COOKIE["user_id"])) {
                             $sql = "
 SELECT 
     sh.shop_name AS shop_name_full,
-    SUM(IFNULL(ob.OLD_BALANCE, 0)) AS OLD_BALANCE,
-    SUM(IFNULL(p.CASH, 0))   AS CASH,
-    SUM(IFNULL(p.CREDIT, 0)) AS CREDIT,
-    SUM(IFNULL(p.BANK, 0))   AS BANK,
-
-    SUM(IFNULL(e.ECASH, 0))   AS ECASH,
-    SUM(IFNULL(e.ECREDIT, 0)) AS ECREDIT,
-    SUM(IFNULL(e.EBANK, 0))   AS EBANK,
-
-    (SUM(IFNULL(ob.OLD_BALANCE, 0)) + SUM(IFNULL(p.CASH, 0)) + SUM(IFNULL(p.CREDIT, 0)) + SUM(IFNULL(p.BANK, 0)) - SUM(IFNULL(e.ECASH, 0)) - SUM(IFNULL(e.ECREDIT, 0)) - SUM(IFNULL(e.EBANK, 0))) AS CLOSING_BALANCE
-
+    IFNULL(ob.OLD_BALANCE, 0) AS OLD_BALANCE,
+    IFNULL(p.CASH, 0)   AS CASH,
+    IFNULL(p.CREDIT, 0) AS CREDIT,
+    IFNULL(p.BANK, 0)   AS BANK,
+    IFNULL(p.UPI, 0)    AS UPI,
+    IFNULL(p.OTHERS, 0) AS OTHERS,
+    IFNULL(e.ECASH, 0)   AS ECASH,
+    IFNULL(e.EBANK, 0)   AS EBANK,
+    (IFNULL(ob.OLD_BALANCE, 0) + IFNULL(p.CASH, 0) + IFNULL(p.CREDIT, 0) + IFNULL(p.BANK, 0) + IFNULL(p.UPI, 0) + IFNULL(p.OTHERS, 0) - IFNULL(e.ECASH, 0) - IFNULL(e.EBANK, 0)) AS CLOSING_BALANCE
 FROM shop sh
 LEFT JOIN (
     /* --- OLD BALANCE (Opening Balance) --- */
     SELECT 
-        shop_id,
-        (IFNULL(income_sum, 0) - IFNULL(exp_sum, 0)) AS OLD_BALANCE
+        s_sub.shop_id,
+        SUM(income - exp) AS OLD_BALANCE
     FROM (
         SELECT 
-            shop_id, 
-            SUM(amount) AS income_sum 
-        FROM payments 
-        WHERE payment_date < STR_TO_DATE('$from_date','%d-%m-%Y') 
-          AND active_status = 'A' 
-        GROUP BY shop_id
-    ) p_o
-    LEFT JOIN (
-        SELECT 
-            shop_id, 
-            SUM(amount) AS exp_sum 
-        FROM expenditure 
-        WHERE `date` < STR_TO_DATE('$from_date','%d-%m-%Y') 
-        GROUP BY shop_id
-    ) e_o USING (shop_id)
-) ob ON (ob.shop_id = sh.shop_id OR ob.shop_id = UPPER(SUBSTRING_INDEX(sh.shop_name, ' ', 1)))
-
+            pay.shop_id, 
+            (IFNULL(pt.service_amount, 0) + (pay.amount - IFNULL(pt.total_settled, 0))) AS income, 
+            0 AS exp 
+        FROM payments pay
+        LEFT JOIN (
+            SELECT 
+                pt.payment_id,
+                COALESCE(st.shop,NULL) AS shop_id,
+                SUM(CASE WHEN pt.mode = 'service' THEN pt.amount_settled ELSE 0 END) AS service_amount,
+                SUM(CASE WHEN pt.mode IN ('service') THEN pt.amount_settled ELSE 0 END) AS total_settled
+            FROM pay_track pt
+            LEFT JOIN service_trans st ON (pt.trans_id = st.trans_id AND pt.mode = 'service')
+             GROUP BY pt.payment_id, shop_id
+        ) pt ON (pay.payment_id = pt.payment_id AND UPPER(pay.shop_id) = UPPER(pt.shop_id))
+        WHERE pay.payment_date < STR_TO_DATE('$from_date','%d-%m-%Y') 
+          AND pay.active_status = 'A' 
+          AND pay.nature = 'CREDIT'
+        UNION ALL
+        SELECT shop_id, 0 AS income, amount AS exp FROM expenditure WHERE `date` < STR_TO_DATE('$from_date','%d-%m-%Y')
+    ) combined_old
+    JOIN shop s_sub ON (combined_old.shop_id = s_sub.shop_id OR combined_old.shop_id = UPPER(SUBSTRING_INDEX(s_sub.shop_name, ' ', 1)))
+    GROUP BY s_sub.shop_id
+) ob ON ob.shop_id = sh.shop_id
 LEFT JOIN (
     /* --- INCOME FROM PAYMENTS --- */
     SELECT 
-        shop_id,
-        SUM(CASE WHEN mode = 'CASH' THEN amount ELSE 0 END) AS CASH,
-        SUM(CASE WHEN mode = 'CREDIT' THEN amount ELSE 0 END) AS CREDIT,
-        SUM(CASE WHEN mode NOT IN ('CASH', 'CREDIT') THEN amount ELSE 0 END) AS BANK
-    FROM payments
-    WHERE payment_date BETWEEN STR_TO_DATE('$from_date','%d-%m-%Y')
-      AND STR_TO_DATE('$to_date','%d-%m-%Y') 
-      AND active_status = 'A'
-    GROUP BY shop_id
-) p ON (p.shop_id = sh.shop_id OR p.shop_id = UPPER(SUBSTRING_INDEX(sh.shop_name, ' ', 1)))
-
+        s_sub.shop_id,
+        SUM(CASE WHEN mode = 'CASH' THEN service_total ELSE 0 END) AS CASH,
+        SUM(CASE WHEN mode = 'CREDIT' THEN service_total ELSE 0 END) AS CREDIT,
+        SUM(CASE WHEN mode = 'BANK' THEN service_total ELSE 0 END) AS BANK,
+        SUM(CASE WHEN mode = 'UPI' THEN service_total ELSE 0 END) AS UPI,
+        SUM(CASE WHEN mode NOT IN ('CASH', 'CREDIT', 'BANK', 'UPI') THEN service_total ELSE 0 END) AS OTHERS
+    FROM (
+        SELECT 
+            pay.payment_id,
+            pay.payment_date,
+            pay.shop_id,
+            pay.mode,
+            pay.nature,
+            pay.active_status,
+            (IFNULL(pt.service_amount, 0) + (pay.amount - IFNULL(pt.total_settled, 0))) AS service_total
+        FROM payments pay
+        LEFT JOIN (
+            SELECT 
+                pt.payment_id,
+                COALESCE(st.shop, NULL) AS shop_id,
+                SUM(CASE WHEN pt.mode = 'service' THEN pt.amount_settled ELSE 0 END) AS service_amount,
+                SUM(CASE WHEN pt.mode IN ('service', 'sales') THEN pt.amount_settled ELSE 0 END) AS total_settled
+            FROM pay_track pt
+            LEFT JOIN service_trans st ON (pt.trans_id = st.trans_id AND pt.mode = 'service')
+            GROUP BY pt.payment_id, shop_id
+        ) pt ON (pay.payment_id = pt.payment_id AND UPPER(pay.shop_id) = UPPER(pt.shop_id))
+    ) pay
+    JOIN shop s_sub ON (pay.shop_id = s_sub.shop_id OR pay.shop_id = UPPER(SUBSTRING_INDEX(s_sub.shop_name, ' ', 1)))
+    WHERE pay.payment_date BETWEEN STR_TO_DATE('$from_date','%d-%m-%Y') AND STR_TO_DATE('$to_date','%d-%m-%Y') AND pay.active_status = 'A' AND pay.nature = 'CREDIT'
+    GROUP BY s_sub.shop_id
+) p ON p.shop_id = sh.shop_id
 LEFT JOIN (
     /* --- EXPENDITURE --- */
     SELECT
-        shop_id,
+        s_sub.shop_id,
         SUM(CASE WHEN paytype_id = '1000003' THEN amount ELSE 0 END) AS ECASH,
-        SUM(CASE WHEN paytype_id = '1000005' THEN amount ELSE 0 END) AS ECREDIT,
         SUM(CASE WHEN paytype_id = '1000002' THEN amount ELSE 0 END) AS EBANK
-    FROM expenditure
-    WHERE `date` BETWEEN STR_TO_DATE('$from_date','%d-%m-%Y')
-      AND STR_TO_DATE('$to_date','%d-%m-%Y')
-    GROUP BY shop_id
-) e ON (e.shop_id = sh.shop_id OR e.shop_id = UPPER(SUBSTRING_INDEX(sh.shop_name, ' ', 1)))
-
-WHERE ('$shop_param' = '' OR sh.shop_id = '$shop_param' OR UPPER(SUBSTRING_INDEX(sh.shop_name, ' ', 1)) = '$shop_param')
-  AND (IFNULL(p.shop_id, '') != '' OR IFNULL(e.shop_id, '') != '' OR IFNULL(ob.shop_id, '') != '')
-
-GROUP BY sh.shop_id
+    FROM expenditure exp_t
+    JOIN shop s_sub ON (exp_t.shop_id = s_sub.shop_id OR exp_t.shop_id = UPPER(SUBSTRING_INDEX(s_sub.shop_name, ' ', 1)))
+    WHERE exp_t.`date` BETWEEN STR_TO_DATE('$from_date','%d-%m-%Y') AND STR_TO_DATE('$to_date','%d-%m-%Y')
+    GROUP BY s_sub.shop_id
+) e ON e.shop_id = sh.shop_id
+WHERE ('$shop_param' = '' OR sh.shop_id = '$shop_param')
+  AND (ob.shop_id IS NOT NULL OR p.shop_id IS NOT NULL OR e.shop_id IS NOT NULL)
 ORDER BY sh.shop_name;
 ";
 
                             $result = $conn->query($sql);
-                            $gt = array_fill(0, 9, 0); // Corrected size
+                            $gt = array_fill(0, 10, 0); // Corrected size
                             ?>
 
                             <table class="table table-striped table-bordered" id="report_table" border="1"
@@ -176,48 +196,75 @@ ORDER BY sh.shop_name;
 
                                 <thead>
                                     <tr style="background-color:#f0f0f0 !important;">
-                                        <th rowspan="2" style="color:#000 !important; vertical-align:middle;">SHOP NAME</th>
-                                        <th rowspan="2" style="color:#000 !important; vertical-align:middle;">OLD BALANCE</th>
-                                        <th colspan="3" style="color:#000 !important;">INCOME</th>
-                                        <th colspan="3" style="color:#000 !important;">EXPENDITURE</th>
-                                        <th rowspan="2" style="color:#000 !important; vertical-align:middle;">NET INCOME</th>
-                                        <th rowspan="2" style="color:#000 !important; vertical-align:middle;">CLOSING BALANCE</th>
+                                        <th rowspan="2" style="color:#000 !important; vertical-align:middle;">SHOP NAME
+                                        </th>
+                                        <th rowspan="2" style="color:#000 !important; vertical-align:middle;">OPEN
+                                            BALANCE</th>
+                                        <th colspan="5" style="color:#000 !important;">INCOME</th>
+                                        <th colspan="2" style="color:#000 !important;">EXPENDITURE</th>
+                                        <th rowspan="2" style="color:#000 !important; vertical-align:middle;">NET INCOME
+                                        </th>
+                                        <th rowspan="2" style="color:#000 !important; vertical-align:middle;">CLOSING
+                                            BALANCE</th>
                                     </tr>
                                     <tr style="background-color:#f0f0f0 !important;">
                                         <th style="color:#000 !important;">CASH</th>
                                         <th style="color:#000 !important;">CREDIT</th>
                                         <th style="color:#000 !important;">BANK</th>
+                                        <th style="color:#000 !important;">UPI</th>
+                                        <th style="color:#000 !important;">OTHERS</th>
                                         <th style="color:#000 !important;">CASH</th>
-                                        <th style="color:#000 !important;">CREDIT</th>
                                         <th style="color:#000 !important;">BANK</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php while ($row = $result->fetch_assoc()) { 
-                                        $income = $row["CASH"] + $row["CREDIT"] + $row["BANK"];
-                                        $expense = $row["ECASH"] + $row["ECREDIT"] + $row["EBANK"];
+                                    <?php while ($row = $result->fetch_assoc()) {
+                                        $income = $row["CASH"] + $row["CREDIT"] + $row["BANK"] + $row["UPI"] + $row["OTHERS"];
+                                        $expense = $row["ECASH"] + $row["EBANK"];
                                         $net_income = $income - $expense;
                                         ?>
                                         <tr>
                                             <td><?php echo $row["shop_name_full"]; ?></td>
-                                            <td class="text-primary"><?php echo number_format($row["OLD_BALANCE"], 2); $gt[0] += $row["OLD_BALANCE"]; ?></td>
-                                            
-                                            <td><?php echo number_format($row["CASH"], 2); $gt[1] += $row["CASH"]; ?></td>
-                                            <td><?php echo number_format($row["CREDIT"], 2); $gt[2] += $row["CREDIT"]; ?></td>
-                                            <td><?php echo number_format($row["BANK"], 2); $gt[3] += $row["BANK"]; ?></td>
+                                            <td class="text-primary">
+                                                <?php echo number_format($row["OLD_BALANCE"], 2);
+                                                $gt[0] += $row["OLD_BALANCE"]; ?>
+                                            </td>
 
-                                            <td class="text-danger"><?php echo number_format($row["ECASH"], 2); $gt[4] += $row["ECASH"]; ?></td>
-                                            <td class="text-danger"><?php echo number_format($row["ECREDIT"], 2); $gt[5] += $row["ECREDIT"]; ?></td>
-                                            <td class="text-danger"><?php echo number_format($row["EBANK"], 2); $gt[6] += $row["EBANK"]; ?></td>
+                                            <td><?php echo number_format($row["CASH"], 2);
+                                            $gt[1] += $row["CASH"]; ?></td>
+                                            <td><?php echo number_format($row["CREDIT"], 2);
+                                            $gt[2] += $row["CREDIT"]; ?>
+                                            </td>
+                                            <td><?php echo number_format($row["BANK"], 2);
+                                            $gt[3] += $row["BANK"]; ?></td>
+                                            <td><?php echo number_format($row["UPI"], 2);
+                                            $gt[4] += $row["UPI"]; ?></td>
+                                            <td><?php echo number_format($row["OTHERS"], 2);
+                                            $gt[5] += $row["OTHERS"]; ?></td>
 
-                                            <td style="font-weight: 900;"><?php echo number_format($net_income, 2); $gt[7] += $net_income; ?></td>
-                                            <td class="bg-light" style="font-size: 1.1em;"><?php echo number_format($row["CLOSING_BALANCE"], 2); $gt[8] += $row["CLOSING_BALANCE"]; ?></td>
+                                            <td class="text-danger">
+                                                <?php echo number_format($row["ECASH"], 2);
+                                                $gt[6] += $row["ECASH"]; ?>
+                                            </td>
+                                            <td class="text-danger">
+                                                <?php echo number_format($row["EBANK"], 2);
+                                                $gt[7] += $row["EBANK"]; ?>
+                                            </td>
+
+                                            <td style="font-weight: 900;">
+                                                <?php echo number_format($net_income, 2);
+                                                $gt[8] += $net_income; ?>
+                                            </td>
+                                            <td class="bg-light" style="font-size: 1.1em;">
+                                                <?php echo number_format($row["CLOSING_BALANCE"], 2);
+                                                $gt[9] += $row["CLOSING_BALANCE"]; ?>
+                                            </td>
                                         </tr>
                                     <?php } ?>
                                     <tr style="background:#e8e8e8;font-weight:bold;">
                                         <td>TOTAL</td>
                                         <?php
-                                        for ($i = 0; $i < 9; $i++) {
+                                        for ($i = 0; $i < 10; $i++) {
                                             echo "<td>" . number_format($gt[$i], 2) . "</td>";
                                         }
                                         ?>
@@ -233,6 +280,65 @@ ORDER BY sh.shop_name;
 
             <?php include "footer.php"; ?>
 
+        </div>
+    </div>
+
+    <!-- DEBUG SECTION -->
+    <div class="container-fluid mt-5">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-danger">Debug: Individual Payments (Used in Summary Above)</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Payment ID</th>
+                            <th>Shop ID</th>
+                            <th>Amount</th>
+                            <th>Mode</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        $debug_sql = "SELECT 
+                                        pay.payment_id, 
+                                        pay.shop_id, 
+                                        (IFNULL(pt.service_amount, 0) + (pay.amount - IFNULL(pt.total_settled, 0))) AS amount, 
+                                        pay.mode, 
+                                        pay.payment_date 
+                                      FROM payments pay
+                                      LEFT JOIN (
+                                          SELECT 
+                                              pt.payment_id,
+                                              COALESCE(st.shop,NULL) AS shop_id,
+                                              SUM(CASE WHEN pt.mode = 'service' THEN pt.amount_settled ELSE 0 END) AS service_amount,
+                                              SUM(CASE WHEN pt.mode IN ('service', 'sales') THEN pt.amount_settled ELSE 0 END) AS total_settled
+                                          FROM pay_track pt
+                                          LEFT JOIN service_trans st ON (pt.trans_id = st.trans_id AND pt.mode = 'service')
+                                          GROUP BY pt.payment_id, shop_id
+                                      ) pt ON (pay.payment_id = pt.payment_id AND UPPER(pay.shop_id) = UPPER(pt.shop_id))
+                                      WHERE pay.payment_date BETWEEN STR_TO_DATE('$from_date','%d-%m-%Y') 
+                                        AND STR_TO_DATE('$to_date','%d-%m-%Y') 
+                                        AND pay.active_status = 'A'
+                                        AND pay.nature = 'CREDIT'
+                                        AND (IFNULL(pt.service_amount, 0) + (pay.amount - IFNULL(pt.total_settled, 0))) > 0
+                                      ORDER BY pay.shop_id, pay.payment_id";
+                        $debug_res = $conn->query($debug_sql);
+                        while ($d = $debug_res->fetch_assoc()) {
+                            echo "<tr>
+                                    <td>{$d['payment_id']}</td>
+                                    <td>{$d['shop_id']}</td>
+                                    <td>{$d['amount']}</td>
+                                    <td>{$d['mode']}</td>
+                                    <td>{$d['payment_date']}</td>
+                                  </tr>";
+                        }
+                        ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -260,4 +366,3 @@ ORDER BY sh.shop_name;
 </body>
 
 </html>
-```

@@ -1,18 +1,8 @@
 <html>
 <style>
 table tbody tr td{border-collapse:collapse;}
-@media print {
-    .no-print { display: none !important; }
-}
 </style>
 <body id="content-to-pdf">
-    <div class="no-print" style="background: #e52d27; padding: 10px; display: flex; justify-content: space-between; align-items: center; color: white; font-family: sans-serif;">
-        <div style="font-weight: bold;">JOB CARD PREVIEW</div>
-        <button type="button" onclick="window.location.href='service.php'" 
-            style="background: white; color: #b31217; border: none; padding: 5px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">
-            ← BACK TO SERVICE LIST
-        </button>
-    </div>
 <?php
 include "db_config.php";
 $trans_id=$_GET["trans_id"];

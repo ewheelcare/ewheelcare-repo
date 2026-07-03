@@ -1,110 +1,328 @@
 <?php
-if (!isset($_COOKIE["user_id"])) {
-    header("Location: login.php?redirect=" . urlencode($_SERVER['REQUEST_URI']));
-    exit();
-}
-
-function getCurrentFinancialYear() {
-    $month = date("n");
-    $year = date("Y");
-    if ($month >= 4) { $startYear = $year; $endYear = $year + 1; }
-    else             { $startYear = $year - 1; $endYear = $year; }
-    return $startYear . "-" . substr($endYear, -2);
-}
+session_start();
 
 include "db_config.php";
 
-$trans_date       = isset($_POST["trans_date"])       ? $_POST["trans_date"]       : '';
-$customer         = isset($_POST["customer"])         ? $_POST["customer"]         : '';
-$gst              = isset($_POST["gst"])              ? $_POST["gst"]              : '';
-$vehicle_no       = isset($_POST["vehicle_no"])       ? $_POST["vehicle_no"]       : '';
-$company_name     = isset($_POST["company_name"])     ? $_POST["company_name"]     : '';
-$customer_name    = isset($_POST["customer_name"])    ? $_POST["customer_name"]    : '';
-$customer_address = isset($_POST["customer_address"]) ? $_POST["customer_address"] : '';
-$customer_mobile  = isset($_POST["customer_mobile"])  ? $_POST["customer_mobile"]  : '';
-$customer_gst     = isset($_POST["customer_gst"])     ? $_POST["customer_gst"]     : '';
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
 
-// ---------------------------------------------------------------
-// CUSTOMER LOOKUP ONLY
-// Customer creation is now handled by add_customer.php
-// If customer id was passed (selected from dropdown or just created),
-// verify it exists. Otherwise fall back to match by company + mobile.
-// ---------------------------------------------------------------
-if (!empty($customer)) {
-    $res_v = $conn->query("SELECT customer_id FROM customer WHERE customer_id='" . $conn->real_escape_string($customer) . "' LIMIT 1");
-    if (!$res_v || $res_v->num_rows === 0) {
-        $customer = ''; // reset — will try fallback below
-    }
-}
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-if (empty($customer)) {
-    $sql_find = "SELECT customer_id FROM customer
-                 WHERE company_name='" . $conn->real_escape_string($company_name) . "'
-                   AND owner_mobile='" . $conn->real_escape_string($customer_mobile) . "'
-                 LIMIT 1";
-    $res_find = $conn->query($sql_find);
-    if ($res_find && $row_find = $res_find->fetch_assoc()) {
-        $customer = $row_find["customer_id"];
+header('Content-Type: application/json');
+
+date_default_timezone_set("Asia/Kolkata");
+
+function getCurrentFinancialYear()
+{
+    $month = date("n");
+    $year  = date("Y");
+
+    if ($month >= 4) {
+        $startYear = $year;
+        $endYear   = $year + 1;
     } else {
-        die("Error: Customer not found. Please select or create a customer first.");
+        $startYear = $year - 1;
+        $endYear   = $year;
     }
+
+    return $startYear . "-" . substr($endYear, -2);
 }
 
-// ---------------------------------------------------------------
-// INVOICE NUMBER — identical to original
-// ---------------------------------------------------------------
-$fy = getCurrentFinancialYear();
+try {
 
-mysqli_begin_transaction($conn);
+    $conn->begin_transaction();
 
-$sql_config = "SELECT * FROM config WHERE item='SALES' AND fy='" . $fy . "/' FOR UPDATE";
-$result_config = mysqli_query($conn, $sql_config);
-$row_config    = mysqli_fetch_assoc($result_config);
-$next_no       = $row_config["slno"] + 1;
+    /* ==========================
+       SESSION VALIDATION
+       ========================== */
 
-$sql_update = "UPDATE config SET slno='" . $next_no . "' WHERE item='SALES' AND fy='" . $row_config["fy"] . "'";
-mysqli_query($conn, $sql_update);
-mysqli_commit($conn);
+    $user_id = $_SESSION['user_id'] ?? null;
+    $shop_id = $_SESSION['shop'] ?? null;
 
-$trans_id  = $next_no;
-$year_part = $row_config["part1"] . $row_config["fy"];
-$shop_id   = isset($_COOKIE["shop"]) ? $_COOKIE["shop"] : '';
+    if (!$user_id) {
+        throw new Exception("Session expired. Please login again.");
+    }
 
-// ---------------------------------------------------------------
-// INSERT SALES HEADER — identical to original
-// ---------------------------------------------------------------
-$sql = "
-INSERT INTO sales_trans
-(
-    trans_id, customer, trans_date, active_status, gst,
-    company_name, customer_name, CUSTOMER_ADDRESS, CUSTOMER_GST,
-    customer_mobile, year_part, ver, shop, created_by, created_on
-)
-VALUES
-(
-    '" . $trans_id . "',
-    '" . $customer . "',
-    STR_TO_DATE('" . $trans_date . "', '%d-%m-%Y'),
-    'D',
-    '" . $gst . "',
-    '" . $company_name . "',
-    '" . $customer_name . "',
-    '" . $customer_address . "',
-    '" . $customer_gst . "',
-    '" . $customer_mobile . "',
-    '" . $year_part . "',
-    '0',
-    '" . $shop_id . "',
-    '" . $_COOKIE["user_id"] . "',
-    CURDATE()
-)
-";
+    if (!$shop_id) {
+        throw new Exception("Shop not found in session.");
+    }
 
-if (!$conn->query($sql)) {
-    die("Insert Error : " . $conn->error);
+    /* ==========================
+       INPUTS
+       ========================== */
+
+    $trans_date       = trim($_POST["trans_date"] ?? '');
+    $customer         = trim($_POST["customer"] ?? '');
+    $gst              = trim($_POST["gst"] ?? '');
+    $vehicle_no       = trim($_POST["vehicle_no"] ?? '');
+    $company_name     = trim($_POST["company_name"] ?? '');
+    $customer_name    = trim($_POST["customer_name"] ?? '');
+    $customer_address = trim($_POST["customer_address"] ?? '');
+    $customer_mobile  = trim($_POST["customer_mobile"] ?? '');
+    $customer_gst     = trim($_POST["customer_gst"] ?? '');
+
+    /* ==========================
+       VALIDATION
+       ========================== */
+
+    if (empty($trans_date)) {
+        throw new Exception("Transaction Date is required.");
+    }
+
+    if (empty($company_name)) {
+        throw new Exception("Company Name is required.");
+    }
+
+    if (empty($customer_name)) {
+        throw new Exception("Customer Name is required.");
+    }
+
+    if (empty($customer_mobile)) {
+        throw new Exception("Customer Mobile is required.");
+    }
+
+    /* ==========================
+       CUSTOMER CHECK
+       ========================== */
+
+    $stmt = $conn->prepare("
+        SELECT customer_id
+        FROM customer
+        WHERE company_name = ?
+        AND owner_mobile = ?
+        LIMIT 1
+    ");
+
+    $stmt->bind_param(
+        "ss",
+        $company_name,
+        $customer_mobile
+    );
+
+    $stmt->execute();
+
+    $result = $stmt->get_result();
+
+    if ($row = $result->fetch_assoc()) {
+
+        $customer = $row['customer_id'];
+
+    } else {
+
+        /* ==========================
+           CREATE CUSTOMER
+           ========================== */
+
+        $stmt = $conn->prepare("
+            INSERT INTO customer
+            (
+                company_name,
+                owner_name,
+                owner_mobile
+            )
+            VALUES
+            (
+                ?, ?, ?
+            )
+        ");
+
+        $stmt->bind_param(
+            "sss",
+            $company_name,
+            $customer_name,
+            $customer_mobile
+        );
+
+        $stmt->execute();
+
+        $customer = $conn->insert_id;
+
+        /* GST */
+
+        $stmt = $conn->prepare("
+            INSERT INTO customer_gst
+            (
+                customer_id,
+                gst
+            )
+            VALUES
+            (
+                ?, ?
+            )
+        ");
+
+        $stmt->bind_param(
+            "is",
+            $customer,
+            $customer_gst
+        );
+
+        $stmt->execute();
+
+        /* ADDRESS */
+
+        $stmt = $conn->prepare("
+            INSERT INTO customer_address
+            (
+                customer_id,
+                address
+            )
+            VALUES
+            (
+                ?, ?
+            )
+        ");
+
+        $stmt->bind_param(
+            "is",
+            $customer,
+            $customer_address
+        );
+
+        $stmt->execute();
+    }
+
+    /* ==========================
+       INVOICE NUMBER GENERATION
+       ========================== */
+
+    $fy = getCurrentFinancialYear() . "/";
+
+    $stmt = $conn->prepare("
+        SELECT *
+        FROM config
+        WHERE item='SALES'
+        AND fy=?
+        FOR UPDATE
+    ");
+
+    $stmt->bind_param("s", $fy);
+    $stmt->execute();
+
+    $result = $stmt->get_result();
+
+    if (!$row_config = $result->fetch_assoc()) {
+        throw new Exception("Sales Config Missing.");
+    }
+
+    $next_no = $row_config['slno'] + 1;
+
+    $stmt = $conn->prepare("
+        UPDATE config
+        SET slno=?
+        WHERE item='SALES'
+        AND fy=?
+    ");
+
+    $stmt->bind_param(
+        "is",
+        $next_no,
+        $row_config['fy']
+    );
+
+    $stmt->execute();
+
+    $trans_id = $next_no;
+
+    $year_part =
+        $row_config["part1"] .
+        $row_config["fy"];
+
+    /* ==========================
+       INSERT SALES HEADER
+       ========================== */
+
+    $stmt = $conn->prepare("
+        INSERT INTO sales_trans
+        (
+            trans_id,
+            customer,
+            trans_date,
+            active_status,
+            gst,
+            company_name,
+            customer_name,
+            customer_address,
+            customer_gst,
+            customer_mobile,
+            year_part,
+            ver,
+            shop,
+            created_by,
+            created_on
+        )
+        VALUES
+        (
+            ?,
+            ?,
+            STR_TO_DATE(?,'%d-%m-%Y'),
+            'D',
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            '0',
+            ?,
+            ?,
+            CURDATE()
+        )
+    ");
+
+    $stmt->bind_param(
+        "ssssssssssss",
+        $trans_id,
+        $customer,
+        $trans_date,
+        $gst,
+        $company_name,
+        $customer_name,
+        $customer_address,
+        $customer_gst,
+        $customer_mobile,
+        $year_part,
+        $shop_id,
+        $user_id
+    );
+
+    $stmt->execute();
+
+    /* ==========================
+       COMMIT
+       ========================== */
+
+    $conn->commit();
+
+    echo json_encode([
+    "status"      => "success",
+    "trans_id"    => $trans_id,
+    "year_part"   => $year_part,
+    "invoice_no"  => $year_part . $trans_id,
+    "customer_id" => $customer,
+    "message"     => "Sales Invoice Created Successfully"
+]);
+} catch (Exception $e) {
+
+    if ($conn) {
+        $conn->rollback();
+    }
+
+    error_log(
+        "ERP | add_sales.php | " .
+        date("Y-m-d H:i:s") .
+        " | User:" . ($user_id ?? 'UNKNOWN') .
+        " | Company:" . ($company_name ?? '') .
+        " | Mobile:" . ($customer_mobile ?? '') .
+        " | Error:" . $e->getMessage()
+    );
+
+    echo json_encode([
+        "status"  => "error",
+        "message" => $e->getMessage()
+    ]);
 }
-
-echo $year_part . "~" . $next_no . "~1";
 
 $conn->close();
 ?>

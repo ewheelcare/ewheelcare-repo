@@ -131,7 +131,7 @@ include "db_config.php";
 						        VEHICLE_NO, VEHICLE_MODEL, NO_OF_WHEELS, COMPANY_NAME, CUSTOMER_NAME,
 						        CUSTOMER_ADDRESS, CUSTOMER_GST, VEHICLE_ODOMETER, VEHICLE,
 						        CUSTOMER_MOBILE, VEHICLE_MAKE, mech
-						        FROM service_trans WHERE trans_id='" . $trans_id . "'";
+						        FROM service_trans WHERE trans_id='" . $trans_id . "' AND shop='" . $_SESSION["shop"] . "'";
 						$result = $conn->query($sql);
 
 						if ($row = $result->fetch_assoc()) {
@@ -186,7 +186,7 @@ include "db_config.php";
 							<span class="alert alert-info">Vehicle Details</span>
 							<table class="table">
 								<tr>
-									<td>Date<input type="text" id="datepicker" class="form-control" <?php echo $final_disabler; ?>></td>
+									<td>Date<input type="text" id="datepicker" class="form-control" value="<?php echo ($trans_date != "") ? date('d-m-Y', strtotime($trans_date)) : date('d-m-Y'); ?>" <?php echo $final_disabler; ?>></td>
 									<td>Invoice No <input class="form-control" readonly name="trans_id" id="trans_id" value="<?php echo $trans_id; ?>"></td>
 									<td colspan="2">Vehicle No <input class="form-control" name="vehicle_no" id="vehicle_no" value="<?php echo $VEHICLE_NO; ?>" onblur="get_details();" <?php echo $final_disabler; ?>></td>
 								</tr>
@@ -457,7 +457,8 @@ include "db_config.php";
 								            AND i.payment_id=p.payment_id
 								            AND a.account_id=p.account
 								            AND i.mode='service'
-								            AND i.trans_id!=''";
+								            AND i.trans_id!=''
+								            AND p.shop_id='" . $_SESSION["shop"] . "'";
 								$result_pay = $conn->query($sql_pay);
 								$total_amount = 0;
 								while ($row_pay = $result_pay->fetch_assoc()) {
@@ -554,7 +555,7 @@ include "db_config.php";
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-					<button type="button" class="btn btn-success" onclick="save_pay1()">Save</button>
+					<button type="button" class="btn btn-success" id="save_pay_btn" onclick="save_pay1()">Save</button>
 				</div>
 			</div>
 		</div>
@@ -663,7 +664,7 @@ include "db_config.php";
 		$(function() {
 			$("#datepicker").datepicker({
 				dateFormat: "dd-mm-yy"
-			}).datepicker("setDate", new Date());
+			});
 		});
 
 		// ================= PAGE LOAD: SET CORRECT TAX COLUMNS =================
@@ -1156,45 +1157,60 @@ function load_special_cost(service) {
 }
 
 		// ================= PAYMENTS =================
+		var is_saving_pay = false;
 		function save_pay1() {
+			if (is_saving_pay) return;
+
 			let paid_amount  = parseFloat($("#paid_amount").val()) || 0;
-    let pay_type     = $("#pay_type1").val();
-    let ref_no       = $("#ref_no1").val();
-    let trans_amount = parseFloat($("#trans_amount").val()) || 0;
+			let pay_type_raw = $("#pay_type1").val();
+			let account_raw  = $("#account1").val();
+			let ref_no       = $("#ref_no1").val();
+			let trans_amount = parseFloat($("#trans_amount").val()) || 0;
 
-    let account = "";
-    try {
-        account = $("#account1").val().split("~")[1];
-    } catch (err) {
-        account = "";
-    }
+			if (paid_amount <= 0) {
+				alert("Please enter a valid amount.");
+				return;
+			}
 
-    // calculate already paid dynamically
-let already_paid = parseFloat($("#already_paid").val()) || 0;
+			if (!pay_type_raw) {
+				alert("Please select a Payment Mode.");
+				return;
+			}
 
-    let max_amount = trans_amount - already_paid;
+			if (!account_raw) {
+				alert("Please select an Account.");
+				return;
+			}
 
-    if (paid_amount > max_amount) {
-    alert(`❌ Excess Amount!
-    
-Entered: ${paid_amount}
-Pending: ${max_amount.toFixed(2)}
+			let pay_type = pay_type_raw.split("~")[1];
+			let account  = account_raw.split("~")[1];
 
-Please enter valid amount.`);
-    return false;
-}
-    $.post("update_pay.php", {
-        trans_id: $("#trans_id").val(),
-        paid_amount: paid_amount,
-        pay_type: pay_type.split("~")[1],
-        account: account,
-        ref_no: ref_no,
-        trans_amount: trans_amount,
-        customer_name: $("#customer_name").val(),
-        customer: $("#customer").val(),
-        trans_date: $("#datepicker").val(),
-        gst: "<?php echo $gst; ?>"
-    }, function(data, status) {
+			// calculate already paid dynamically
+			let already_paid = parseFloat($("#already_paid").val()) || 0;
+			let max_amount = trans_amount - already_paid;
+
+			if (paid_amount > max_amount + 0.01) { // 0.01 for float precision
+				alert(`❌ Excess Amount!\nEntered: ${paid_amount}\nPending: ${max_amount.toFixed(2)}`);
+				return;
+			}
+
+			// Disable button to prevent double-clicks
+			is_saving_pay = true;
+			let btn = $("#save_pay_btn");
+			btn.prop("disabled", true).text("Saving...");
+
+			$.post("update_pay.php", {
+				trans_id: $("#trans_id").val(),
+				paid_amount: paid_amount,
+				pay_type: pay_type,
+				account: account,
+				ref_no: ref_no,
+				trans_amount: trans_amount,
+				customer_name: $("#customer_name").val(),
+				customer: $("#customer").val(),
+				trans_date: $("#datepicker").val(),
+				gst: "<?php echo $gst; ?>"
+			}, function(data, status) {
 
     let resp = (typeof data === "string") ? JSON.parse(data) : data;
 
@@ -1204,31 +1220,67 @@ Please enter valid amount.`);
         return;
     }
 
-    if (!resp.success) {
-        alert(resp.message);
-        return;
-    }
+			if (!resp.success) {
+				alert(resp.message);
+				is_saving_pay = false;
+				btn.prop("disabled", false).text("Save"); // Re-enable if error
+				return;
+			}
 
     alert(resp.message);
     location.reload();
 });
 }
 
-		function delete_it_pay(payment_id, nature, account, account_to, amount, mode) {
-			if (confirm("Are you sure that you want to delete this payment?")) {
-				$.post("delete_payment.php", {
-					payment_id: payment_id,
-					nature:     nature,
-					account:    account,
-					account_to: account_to,
-					amount:     amount,
-					mode:       mode
-				}, function(data, status) {
-					alert($.trim(data));
-					location.reload();
-				});
-			}
-		}
+		function delete_it_pay(   payment_id,    nature,    account,    account_to,    amount,    mode)
+		 {
+
+    if (
+        confirm(
+            "Are you sure that you want to delete this payment?"
+        )
+    ) {
+
+        $.post(
+
+            "delete_payment.php",
+
+            {
+                payment_id: payment_id,
+                nature: nature,
+                account: account,
+                account_to: account_to,
+                amount: amount,
+                mode: mode
+            },
+
+            function(data) {
+
+                if (data.success) {
+
+                    alert(data.message);
+
+                    location.reload();
+
+                } else {
+
+                    alert("Error : " + data.message);
+
+                }
+
+            },
+
+            "json"
+
+        ).fail(function(xhr) {
+
+            console.log(xhr.responseText);
+
+            alert("Server Error");
+
+        });
+    }
+}
 
 		// ================= VEHICLE / CUSTOMER LOOKUPS =================
 		function get_details() {
@@ -1323,7 +1375,7 @@ function setwheels() {
 				return;
 			}
 
-			window.open("service_receipt.php?trans_id=" + trans_id + "&action=" + param, '_blank');
+			window.open("service_invoice_print.php?trans_id=" + trans_id + "&action=" + param, '_blank');
 		}
 
 		function get_jobcard() {

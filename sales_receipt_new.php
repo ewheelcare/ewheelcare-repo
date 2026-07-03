@@ -1,834 +1,573 @@
-<html>
-<style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sales Receipt</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
-body{
-    font-family:Arial,sans-serif;
-    margin:0;
-    padding:4px;
-    color:#000;
-}
-
-table{
-    width:100%;
-    border-collapse:collapse;
-}
-
-td{
-    vertical-align:top;
-    padding:3px 5px;
-}
-
-.main-border{
-    border:1px dotted #666;
-}
-
-.dotted-border{
-    border:1px dotted #888;
-}
-
-.header-title{
-    font-size:24px;
-    font-weight:bold;
-    text-align:center;
-}
-
-.header-sub{
-    font-size:18px;
-    line-height:1.5;
-    text-align:center;
-}
-
-.section-title{
-    font-weight:bold;
-    background:#f3f3f3;
-    padding:2px;
-}
-
-.signature-box{
-    height:70px;
-    vertical-align:bottom;
-    text-align:center;
-    padding-top:20px;
-}
-
-.signature-line{
-    border-top:1px dotted #555;
-    width:80%;
-    margin:auto;
-    padding-top:6px;
-    font-weight:bold;
-}
-
-.terms-list{
-    margin-top:4px;
-    padding-left:16px;
-    line-height:1.2;
-    font-size:12px;
-}
-
-.no-break{
-    page-break-inside:avoid;
-}
-
-@media print{
-
-    body{
-        margin:0;
-        padding:5px;
-    }
-
-    .no-break{
-        page-break-inside:avoid;
-    }
-
-    /* table,tr,td{
-        page-break-inside:avoid !important;
-    } */
-
-}
-
-</style>
-<?php
-function numberToWords($number)
-{
-    if ($number == 0) {
-        return "Zero";
-    }
-
-    $words = array(
-        0 => '', 1 => 'One', 2 => 'Two', 3 => 'Three', 4 => 'Four',
-        5 => 'Five', 6 => 'Six', 7 => 'Seven', 8 => 'Eight', 9 => 'Nine',
-        10 => 'Ten', 11 => 'Eleven', 12 => 'Twelve', 13 => 'Thirteen',
-        14 => 'Fourteen', 15 => 'Fifteen', 16 => 'Sixteen',
-        17 => 'Seventeen', 18 => 'Eighteen', 19 => 'Nineteen',
-        20 => 'Twenty', 30 => 'Thirty', 40 => 'Forty',
-        50 => 'Fifty', 60 => 'Sixty', 70 => 'Seventy',
-        80 => 'Eighty', 90 => 'Ninety'
-    );
-
-    $levels = array(
-        10000000 => 'Crore',
-        100000 => 'Lakh',
-        1000 => 'Thousand',
-        100 => 'Hundred'
-    );
-
-    $result = '';
-
-    foreach ($levels as $value => $name) {
-        if ($number >= $value) {
-            $count = floor($number / $value);
-            $number = $number % $value;
-            $result .= numberToWords($count) . ' ' . $name . ' ';
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            text-transform: uppercase;
+            font-size: 11px;
+            line-height: 1.4;
         }
-    }
 
-    if ($number > 0) {
-        if ($number < 20) {
-            $result .= $words[$number];
-        } else {
-            $result .= $words[floor($number / 10) * 10];
-            if ($number % 10) {
-                $result .= ' ' . $words[$number % 10];
+        .receipt-container {
+            max-width: 850px;
+            margin: 0 auto;
+            border: 1px solid #000;
+            padding: 0;
+            background: #fff;
+        }
+
+        .header-section {
+            display: flex;
+            border-bottom: 1px solid #000;
+            padding: 10px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo-left {
+            width: 20%;
+            text-align: left;
+        }
+
+        .logo-left img {
+            max-width: 120px;
+            height: auto;
+        }
+
+        .logo-center {
+            width: 40%;
+            text-align: center;
+        }
+
+        .logo-center img {
+            max-width: 280px;
+            height: auto;
+        }
+
+        .header-details {
+            width: 40%;
+            text-align: right;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.4;
+            color: #000;
+        }
+
+        .header-details .address-text {
+            color: #003366; /* Dark blue for address like in screenshot */
+        }
+
+        .invoice-type-banner {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 700;
+            text-decoration: underline;
+            letter-spacing: 2px;
+            padding: 10px 0;
+            border-bottom: 1px solid #000;
+            color: #000;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-bottom: 1px solid #000;
+        }
+
+        .details-box {
+            padding: 10px 15px;
+            border-right: 1px solid #000;
+        }
+
+        .details-box:last-child {
+            border-right: none;
+        }
+
+        .section-title {
+            font-weight: 700;
+            background: #f2f2f2;
+            padding: 3px 8px;
+            margin-bottom: 8px;
+            display: inline-block;
+            border: 1px solid #000;
+            font-size: 10px;
+        }
+
+        .info-row {
+            display: flex;
+            margin-bottom: 3px;
+        }
+
+        .info-label {
+            width: 100px;
+            font-weight: 600;
+        }
+
+        .info-value {
+            flex: 1;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0;
+        }
+
+        .items-table th {
+            background: #f2f2f2;
+            border: 1px solid #000;
+            padding: 8px 5px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .items-table td {
+            border: 1px solid #000;
+            padding: 6px 5px;
+            vertical-align: top;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+
+        .totals-section {
+            display: flex;
+            justify-content: flex-end;
+            border-top: none;
+        }
+
+        .totals-box {
+            width: 300px;
+        }
+
+        .total-row {
+            display: flex;
+            border: 1px solid #000;
+            border-top: none;
+        }
+
+        .total-label {
+            flex: 1;
+            padding: 6px 10px;
+            font-weight: 700;
+            background: #f9f9f9;
+            text-align: right;
+            border-right: 1px solid #000;
+        }
+
+        .total-value {
+            width: 100px;
+            padding: 6px 10px;
+            text-align: right;
+            font-weight: 700;
+        }
+
+        .amount-words {
+            padding: 15px;
+            text-align: center;
+            font-weight: 700;
+            border-bottom: 1px solid #000;
+            font-size: 12px;
+            background: #fff;
+        }
+
+        .signature-section {
+            display: flex;
+            justify-content: space-between;
+            padding: 40px 15px 10px;
+            text-align: center;
+        }
+
+        .sig-box {
+            width: 30%;
+            border-top: 1px solid #000;
+            padding-top: 5px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        @media print {
+            body {
+                padding: 0;
+            }
+
+            .receipt-container {
+                border: 1px solid #000;
+            }
+
+            .no-print {
+                display: none !important;
             }
         }
+    </style>
+</head>
+
+<body>
+    <div class="no-print"
+        style="background: #e52d27; padding: 10px; display: flex; justify-content: space-between; align-items: center; color: white;">
+        <button type="button" onclick="window.location.href='sales_trans_new.php'"
+            style="background: white; color: #b31217; border: none; padding: 5px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">
+            &larr; BACK TO SALES LIST
+        </button>
+        <div style="font-weight: bold; font-size: 16px;">PRINT PREVIEW</div>
+        <div>
+            <button type="button" onclick="window.print()"
+                style="background: white; color: #b31217; border: none; padding: 5px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-right: 10px;">
+                PRINT
+            </button>
+            <button type="button" onclick="downloadPDF()"
+                style="background: white; color: #b31217; border: none; padding: 5px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">
+                DOWNLOAD PDF
+            </button>
+        </div>
+    </div>
+    <?php
+    function numberToWords($number)
+    {
+        if ($number == 0) return "Zero";
+        $words = array(0 => '', 1 => 'One', 2 => 'Two', 3 => 'Three', 4 => 'Four', 5 => 'Five', 6 => 'Six', 7 => 'Seven', 8 => 'Eight', 9 => 'Nine', 10 => 'Ten', 11 => 'Eleven', 12 => 'Twelve', 13 => 'Thirteen', 14 => 'Fourteen', 15 => 'Fifteen', 16 => 'Sixteen', 17 => 'Seventeen', 18 => 'Eighteen', 19 => 'Nineteen', 20 => 'Twenty', 30 => 'Thirty', 40 => 'Forty', 50 => 'Fifty', 60 => 'Sixty', 70 => 'Seventy', 80 => 'Eighty', 90 => 'Ninety');
+        $levels = array(10000000 => 'Crore', 100000 => 'Lakh', 1000 => 'Thousand', 100 => 'Hundred');
+        $result = '';
+        foreach ($levels as $value => $name) {
+            if ($number >= $value) {
+                $count = floor($number / $value);
+                $number = $number % $value;
+                $result .= numberToWords($count) . ' ' . $name . ' ';
+            }
+        }
+        if ($number > 0) {
+            if ($number < 20) $result .= $words[$number];
+            else {
+                $result .= $words[floor($number / 10) * 10];
+                if ($number % 10) $result .= ' ' . $words[$number % 10];
+            }
+        }
+        return trim($result);
     }
 
-    return trim($result);
-}
-?>
-<body id="content-to-pdf">
-<?php
-include "db_config.php";
-$trans_id=$_GET["trans_id"];
-$shop=$_COOKIE["shop"];
-$sql = "select * from company";
-$result = $conn->query($sql);
-
-if ($row = $result->fetch_assoc()) {
-$company_name1= $row["company_name"];
-$company_address1= $row["company_address"];
-$company_gst= $row["company_gst"];
-$company_mobile= $row["company_mobile"];
-$company_email= $row["company_email"];
-$company_bank =$row["company_bank"];
-$company_branch= $row["company_branch"];
-$company_ifsc =$row["company_ifsc"];
-$company_ac =$row["company_ac"];
-}
-$sql = "select * from shop where shop_id='".$shop."'";
-$result = $conn->query($sql);
-if ($row = $result->fetch_assoc()) {
-$company_address1= $row["address"];	
-}
-$result = $conn->query($sql);
-$sql="select trans_id, DATE_FORMAT(m.trans_date, '%d-%m-%Y') AS trans_date, details,ver, customer, trans_amount, pending, gst, tally, created_by, created_on, modified_by, modified_on, active_status,  COMPANY_NAME, CUSTOMER_NAME, CUSTOMER_ADDRESS, CUSTOMER_GST, customer_mobile,year_part FROM sales_trans  m where m.active_status='A' and m.trans_id='".$trans_id."' order by 1";
-//echo $sql;
-$result = $conn->query($sql);
-
-if ($row = $result->fetch_assoc()) {
-	$customer= $row["customer"];
-$gst=$row["gst"];
-$company_name= $row["COMPANY_NAME"];
-$company_address= $row["CUSTOMER_ADDRESS"];
-$owner_name= $row["CUSTOMER_NAME"];
-$owner_gst= $row["CUSTOMER_GST"];
-$owner_mobile= $row["customer_mobile"];
-$trans_date =$row["trans_date"];
-$pending = $row["pending"];
-$year_part=$row["year_part"];
-$ver=$row["ver"];
-
-$company_name =
-trim($company_name) != ''
-? $company_name
-: 'NA - Not Provided';
-
-$company_address =
-trim($company_address) != ''
-? $company_address
-: 'NA - Not Provided';
-
-$owner_name =
-trim($owner_name) != ''
-? $owner_name
-: 'NA - Not Provided';
-
-$owner_mobile =
-trim($owner_mobile) != ''
-? $owner_mobile
-: 'NA - Not Provided';
-
-$owner_gst =
-trim($owner_gst) != ''
-? $owner_gst
-: 'NA - Not Provided';
-
-}
-?>
-<!-- <table style="width:100%; table-layout:fixed;border:1px dotted #888;min-height:610px"> -->
-<table class="main-border no-break"
-style="
-table-layout:fixed;
-min-height:auto;
-">
-<tr><td><table style="width:100%; table-layout:fixed;border:1px dotted #888;">
-<!-- <tr><td style="width:20%;border:1px dotted #888"><img src="img/expert_logo_final.png" style="height:90px"/></td><td style="width:70%;text-align:center;font-size:190%;background-color:#f0f0f0">
-<?php echo $company_name1;?><BR> <SPAN style="font-size:70%"><?php echo $company_address1;?><br> <?php echo $company_gst;?></SPAN></td></tr> -->
-
-<tr>
-
-<td
-style="
-width:25%;
-border:1px dotted #666;
-text-align:center;
-padding:4px;
-">
-
-<img
-src="img/expert_logo_final.png"
-style="
-width:140px;
-height:auto;
-display:block;
-margin:auto;
-margin-top:8px;
-">
-
-</td>
-
-<td
-style="
-width:75%;
-border:1px dotted #666;
-background:#f7f7f7;
-padding:4px;
-">
-
-<div class="header-title">
-<?php echo $company_name1;?>
-</div>
-
-<div class="header-sub">
-<?php echo $company_address1;?>
-<br style="line-height:4px">
-<?php echo $company_gst;?>
-</div>
-
-</td>
-
-</tr>
-
-</table></td></tr>
-<tr><td><table style="width:100%; table-layout:fixed;border:1px dotted #888">
-<!-- <tr><td style="width:50%;border:1px dotted #888">Company :<?php echo $company_name1;?><br style="line-height:4px">
-Address : <?php echo $company_address1;?><br style="line-height:4px">
-<?php if($gst=="Y"){?>
-GSTIN : <?php echo $company_gst;?><br style="line-height:4px">
-<?PHP }?>
-Contact :<?php echo $company_mobile;?><br style="line-height:4px">
-Email:<?php echo $company_email;?><br style="line-height:4px">
- </td><td style="width:50%;border:1px dotted #888">
- Invoice No :<?php echo $year_part;?>/<?php echo $trans_id;?><br style="line-height:4px">
-Date  : <?php echo $trans_date;?><br style="line-height:4px">
- </td></tr>
-<tr><td style="width:50%;border:1px dotted #888">Customer :<?php echo $company_name;?><br style="line-height:4px">
-<?php if($gst=="Y"){?>
-Customer GSTIN : <?php echo $owner_gst;?><br style="line-height:4px">
-<?PHP }?>
-
-
- Owner :<?php echo $owner_name;?><br style="line-height:4px">
-
- </td><td style="width:50%;border:1px dotted #888">
-Address : <?php echo $company_address;?><br style="line-height:4px">
- Mobile : <?php echo $owner_mobile;?>
- </td></tr> -->
-
- <tr>
-
-<td
-style="
-width:60%;
-border:1px dotted #888;
-padding:8px;
-vertical-align:top;
-">
-
-<div
-style="
-font-size:20px;
-font-weight:bold;
-border-bottom:1px dotted #999;
-padding-bottom:5px;
-margin-bottom:4px;
-">
-Company Details
-</div>
-
-<table style="width:100%; font-size:14px; line-height:1.5;">
-
-<tr>
-<td style="width:22%; font-weight:bold;">
-Company
-</td>
-
-<td>
-: <?php echo $company_name1;?>
-</td>
-</tr>
-
-<tr>
-<td style="font-weight:bold;">
-Address
-</td>
-
-<td>
-: <?php echo $company_address1;?>
-</td>
-</tr>
-
-<?php if($gst=="Y"){ ?>
-
-<tr>
-<td style="font-weight:bold;">
-GSTIN
-</td>
-
-<td>
-: <?php echo $company_gst;?>
-</td>
-</tr>
-
-<?php } ?>
-
-<tr>
-<td style="font-weight:bold;">
-Contact
-</td>
-
-<td>
-: <?php echo $company_mobile;?>
-</td>
-</tr>
-
-<tr>
-<td style="font-weight:bold;">
-Email
-</td>
-
-<td>
-: <?php echo $company_email;?>
-</td>
-</tr>
-
-</table>
-
-</td>
-
-<td
-style="
-width:35%;
-border:1px dotted #888;
-padding:8px;
-vertical-align:top;
-">
-
-<div
-style="
-font-size:20px;
-font-weight:bold;
-border-bottom:1px dotted #999;
-padding-bottom:5px;
-margin-bottom:8px;
-">
-Invoice Details
-</div>
-
-<table style="width:100%; font-size:14px; line-height:1.7;">
-
-<tr>
-<td style="width:45%; font-weight:bold;">
-Invoice No
-</td>
-
-<td style="white-space:nowrap;">
-: <?php echo $year_part;?><?php echo $trans_id;?>
-</td>
-</tr>
-
-<tr>
-<td style="font-weight:bold;">
-Invoice Date
-</td>
-
-<td>
-: <?php echo $trans_date;?>
-</td>
-</tr>
-
-</table>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td colspan="2"
-style="
-border:1px dotted #888;
-padding:8px;
-">
-
-<div
-style="
-font-size:17px;
-font-weight:bold;
-border-bottom:1px dotted #999;
-padding-bottom:5px;
-margin-bottom:8px;
-">
-Customer Details
-</div>
-
-<table style="width:100%; font-size:14px; line-height:1.2;">
-
-<tr>
-
-<td
-style="
-width:15%;
-font-weight:bold;
-padding:2px 4px;
-">
-Customer
-</td>
-
-<td style="width:35%;">
-: <?php echo $company_name;?>
-</td>
-
-<td
-style="
-width:15%;
-font-weight:bold;
-padding:2px 4px;
-">
-Mobile
-</td>
-
-<td
-style="
-width:15%;
-font-weight:bold;
-padding:2px 4px;
-">
-: <?php echo $owner_mobile;?>
-</td>
-
-</tr>
-
-<tr>
-
-<td
-style="
-width:15%;
-font-weight:bold;
-padding:2px 4px;
-">
-Cust. GSTIN
-</td>
-
-<td>
-: <?php echo $owner_gst;?>
-</td>
-
-<td
-style="
-width:15%;
-font-weight:bold;
-padding:2px 4px;
-">
-Owner
-</td>
-
-<td>
-: <?php echo $owner_name;?>
-</td>
-
-</tr>
-
-<tr>
-
-<td
-style="
-width:15%;
-font-weight:bold;
-padding:2px 4px;
-">
-Address
-</td>
-
-<td colspan="3">
-: <?php echo $company_address;?>
-</td>
-
-</tr>
-
-</table>
-
-</td>
-
-</tr>
-
-</table></td></tr><tr><td><table style="width:100%; table-layout:fixed;border:1px dotted #888;font-size:12px;font-weight:bold">
-<?php  $sql="SELECT trans_id,subtrans_id,d.price, i.item_id,i.item_name,i.item_description,i.hsn,d.cost,d.qty,d.tax,d.tax_amount,d.total,d.tax_sgst,d.tax_amount_sgst,d.tax_igst, d.tax_amount_igst FROM sales_trans_det d,item i where i.item_id=d.item_id and d.trans_id='".$trans_id."' and d.active_status='A' and ver='".$ver."' and account='Y' and qty>0 and total>0 order by subtrans_id";
-				//echo $sql;
-				$result = $conn->query($sql);
-$tax_amount=0;
-$total_amount=0;
-$colspan=5;
-?>
-<tr>
-<td style="border:1px dotted #888;width:10%" >SLNO</td>
-<td style="border:1px dotted #888;width:160px">Item</td>
-<td style="border:1px dotted #888;width:160px">HSN</td>
-
-<td style="border:1px dotted #888">Qty</td>
-<td style="border:1px dotted #888">Rate</td>
-<td style="border:1px dotted #888">Amount</td>
-</tr>
-<?php 
-$slno=1;
-while ($row = $result->fetch_assoc()) {
-	$tax=$row["tax"]	; 
-	$tax_sgst=$row["tax_sgst"]	; 
-	$tax_igst=$row["tax_igst"]	; 
-	$total_price+=$row["price"]	; 
-$tax_amount+=$row["tax_amount"]	;
-$tax_amount_sgst+=$row["tax_amount_sgst"]	;
-$tax_amount_igst+=$row["tax_amount_igst"]	;
-$total_amount+=$row["total"];
-$total_qty+=$row["qty"];
-	?>
-<TR>
-<TD style="border:1px dotted #888;font-size:90%">
-<?php echo $slno++;?>
-</td>
-<td style="border:1px dotted #888;width:160px"><b><?php echo $row["item_name"];?></b>
-, <?php echo $row["item_description"];?>
-
-
-</TD>
-<td style="border:1px dotted #888;width:160px"><?php echo $row["hsn"];?></td>
-<td style="border:1px dotted #888;text-align:right"> <?php echo $row["qty"];?></td>
-<td style="border:1px dotted #888;text-align:right"> <?php echo $row["cost"];?></td>
-
-<td style="border:1px dotted #888;text-align:right"> <?php echo $row["price"];?></td>
-</TR>
-<?php }?>
-<tr><td style="border:1px dotted #888;text-align:right" colspan="3">Total</td><td  style="border:1px dotted #888"><?php echo $total_qty;?></td><td  style="border:1px dotted #888"></td><td  style="border:none"><?php echo $total_price;?></td></tr>
-<?php if($gst=="Y"){ if(strncasecmp($company_gst, "37", strlen("37")) === 0){ ?>
-<tr><td  style="border:1px dotted #888;text-align:right" colspan="5">CGST Tax (<?php echo $tax ;?> %)</td><td  style="border:1px dotted #888"><?php echo $tax_amount;?></td></tr>
-<tr><td  style="border:1px dotted #888;text-align:right" colspan="5">SGST Tax (<?php echo $tax_sgst ;?> %)</td><td  style="border:1px dotted #888"><?php echo $tax_amount_sgst;?></td></tr>
-<?php }else{?>
-<tr><td  style="border:1px dotted #888;text-align:right" colspan="5">IGST Tax (<?php echo $tax ;?> %)</td><td  style="border:1px dotted #888"><?php echo $tax_amount;?></td></tr>
-
-<?php }
-//$total_amount+=$tax_amount+$tax_amount_sgst; 
-}?>
-<tr><td style="border:1px dotted #888;;text-align:right" colspan="5">Total Amount </td><td style="border:1px dotted #888"><?php echo $total_amount;?></td></tr>
-<!--<tr><td style="border:none;;text-align:right" colspan="<?php echo $colspan;?>">Amount Paid </td><td style="border:none"><?php echo $total_amount-$pending;?></td></tr>
-<tr><td style="border:none;;text-align:right" colspan="<?php echo $colspan;?>">Amount Pending </td><td style="border:none"><?php echo  $pending;?></td></tr>-->
-<!--<tr><td style="border:1px dotted #888">Transaction ID : <?php echo $trans_id;?> </td><td style="border:1px dotted #888"> Trans Date <?php echo  $trans_date ;?></td></tr>-->
-</table>
-	<br style="line-height:4px"><CENTER><span style="text-align:center;font-size:14px;font-weight:bold;">AMOUNT CHARGEABLE : INR. <?php echo numberToWords($total_amount);	?> ONLY</span></CENTER>
-	
-<br style="line-height:4px">
-<table style="width:100%; table-layout:fixed;border:1px dotted #888;font-size:12px;font-weight:bold">
-<tr>
-<td style="border:1px dotted #888;width:25%">HSN</td>
-<td style="border:1px dotted #888;">Taxable Amount</td>
-<?php if(strncasecmp($company_gst, "37", strlen("37")) === 0){?>
-<td style="border:1px dotted #888;">CGST(%)</td>
-<td style="border:1px dotted #888;">CGST Amount</td>
-<td style="border:1px dotted #888;">SGST(%)</td>
-<td style="border:1px dotted #888;">SGST Amount</td>
-
-<?php }else{?>
-<td style="border:1px dotted #888;">IGST(%)</td>
-<td style="border:1px dotted #888;">IGST Amount</td>
-
-<?php }?>
-<td style="border:1px dotted #888;">Total Tax</td>
-
-</tr>
-<?PHP  $sql="SELECT trans_id,subtrans_id,d.price, i.item_id,i.item_name,i.item_description,i.hsn,d.cost,d.qty,d.tax,d.tax_amount,d.total,d.tax_sgst,d.tax_amount_sgst,d.tax_igst, d.tax_amount_igst FROM sales_trans_det d,item i where i.item_id=d.item_id and d.trans_id='".$trans_id."' and d.active_status='A' and ver='".$ver."' and account='Y' and qty>0 and total>0 order by subtrans_id";
-				//echo $sql;
-				$result = $conn->query($sql);
-$tax_amount=0;
-$total_amount=0;
-$tax_amount_sgst=0;
-$tax_amount_igst=0;
-$total_price=0;
-$total_tax=0;
-while ($row = $result->fetch_assoc()) {
-	$tax=$row["tax"]	; 
-	$tax_sgst=$row["tax_sgst"]	; 
-	$tax_igst=$row["tax_igst"]	; 
-	$total_price+=$row["price"]	; 
-$tax_amount+=$row["tax_amount"]	;
-$tax_amount_sgst+=$row["tax_amount_sgst"]	;
-$tax_amount_igst+=$row["tax_amount_igst"]	;
-$total_amount+=$row["total"];
-$total_qty+=$row["qty"];
-$total_tax+= $row["tax_amount"]	+$row["tax_amount_sgst"]+$row["tax_amount_igst"];
-?>
-<TR>
-<td style="border:1px dotted #888;width:160px"><?php echo $row["hsn"];?></td>
-<td style="border:1px dotted #888;width:160px"><?php echo $row["price"];?></td>
-<?php if(strncasecmp($company_gst, "37", strlen("37")) === 0){?>
-<td style="border:1px dotted #888;width:160px"><?php echo $row["tax"];?></td>
-<td style="border:1px dotted #888;width:160px"><?php echo $row["tax_amount"];?></td>
-<td style="border:1px dotted #888;width:160px"><?php echo $row["tax_sgst"];?></td>
-<td style="border:1px dotted #888;width:160px"><?php echo $row["tax_amount_sgst"];?></td>
-
-<?PHP }ELSE{?>
-<td style="border:1px dotted #888;width:160px"><?php echo $row["tax_igst"];?></td>
-<td style="border:1px dotted #888;width:160px"><?php echo $row["tax_amount_igst"];?></td>
-
-<?PHP }?>
-<td style="border:1px dotted #888;width:160px"><?php echo $row["tax_amount"]+$row["tax_amount_sgst"]+$row["tax_amount_igst"];?></td>
-
-</TR>
-<?PHP }?>
-<tr>
-<td style="border:1px dotted #888;width:160px"></td>
-<td style="border:1px dotted #888;width:160px"><?php echo $total_price;?></td>
-<?php if(strncasecmp($company_gst, "37", strlen("37")) === 0){?>
-<td style="border:1px dotted #888;width:160px"></td>
-<td style="border:1px dotted #888;width:160px"><?php echo $tax_amount;?></td>
-<td style="border:1px dotted #888;width:160px"></td>
-<td style="border:1px dotted #888;width:160px"><?php echo $tax_amount_sgst;?></td>
-<?php }else{?>
-<td style="border:1px dotted #888;width:160px"></td>
-<td style="border:1px dotted #888;width:160px"><?php echo $tax_amount_igst;?></td>
-<?php }?>
-<td style="border:1px dotted #888;width:160px"><?php echo $total_tax;?></td>
-</tr>
-<table>
-	<br style="line-height:4px"><CENTER><span style="text-align:center;font-size:14px;font-weight:bold;">TOTAL TAX : INR. <?php echo numberToWords($total_tax);	?> ONLY</span></CENTER>
-
-</td></tr>
-<tr><td>
-<?php if($gst=="Y"){?>
-<!-- <table style="width:100%; table-layout:fixed;border:1px dotted #888">
-<tr>
-<td style="border:1px dotted #888">Bank name</td>
-<td style="border:1px dotted #888">Bank A/c </td>
-<td style="border:1px dotted #888">IFSC</td>
-<td style="border:1px dotted #888">Branch</td>
-</tr>
-<tr>
-<td style="border:1px dotted #888"><?php echo $company_bank;?></td>
-<td style="border:1px dotted #888"><?php echo $company_ac;?></td>
-<td style="border:1px dotted #888"><?php echo $company_ifsc;?></td>
-<td style="border:1px dotted #888"><?php echo $company_branch;?></td>
-</tr>
-</table> -->
-<?php }?>
-</td></tr>
-
-
-</table>
-<table style="width:100%;margin-top:5px">
-<tr>
-
-<td colspan="3"
-class="dotted-border"
-style="padding:2px;">
-
-<div class="section-title">
-Terms & Conditions
-</div>
-
-<ol class="terms-list">
-
-<li>
-Goods once sold cannot be taken back.
-</li>
-
-<li>
-Manufacturing defects will be replaced
-by the manufacturing company only.
-</li>
-
-<li>
-No dealer guarantee for manufacturing defects.
-</li>
-
-<li>
-All disputes are subject to
-Anakapalli jurisdiction only.
-</li>
-
-</ol>
-
-</td>
-
-</tr>
-
-<tr>
-
-<td class="signature-box">
-
-<div class="signature-line">
-Customer / Authorised Signatory
-</div>
-
-</td>
-
-<td class="signature-box">
-
-<div class="signature-line">
-Service Advisor Signature
-</div>
-
-</td>
-
-<td class="signature-box">
-
-<div class="signature-line">
-Cashier / Authorised Signature
-</div>
-
-</td>
-
-</tr>
-<!-- <tr>
-<td style="text-align:center">___________________________<br>Customer/ Authorised Signatory</td>
-<td style="text-align:center">___________________________<br>Service/Advisor Signature</td>
-<td style="text-align:center">___________________________<br>Cashier/Authorised Signature</td>
-
-</tr> -->
-</table>
-<script src="js/jquery-3.6.0.js"></script>
-  <script src="js/jquery-ui.js"></script>
- <script src="js/html2pdf.bundle.min.js"></script>
-
- <script>
-
-$(document).ready(function () {
-
-    var element =
-    document.getElementById('content-to-pdf');
-
-    var opt = {
-
-        margin: 0.2,
-
-        filename: 'Trans_Receipt_CCRS.pdf',
-
-        image: {
-            type: 'jpeg',
-            quality: 0.98
-        },
-
-        html2canvas: {
-            scale: 1.2,
-            scrollY: 0
-        },
-
-        jsPDF: {
-            unit: 'in',
-            format: 'a4',
-            orientation: 'portrait'
-        },
-
-        //
-        // REMOVE avoid-all
-        //
-        pagebreak: {
-            mode: ['css', 'legacy']
+    include "db_config.php";
+    $trans_id = $_GET["trans_id"];
+    $action = $_GET["action"] ?? "";
+    $shop_id = $_COOKIE["shop"] ?? '';
+
+    $sql_c = "SELECT * FROM company";
+    $res_c = $conn->query($sql_c);
+    $company = $res_c->fetch_assoc();
+
+    $sql_s = "SELECT * FROM shop WHERE shop_id='$shop_id'";
+    $res_s = $conn->query($sql_s);
+    if($res_s->num_rows > 0) {
+        $shop = $res_s->fetch_assoc();
+        $print_address = !empty($shop["address"]) ? $shop["address"] : $company["company_address"];
+    } else {
+        $print_address = $company["company_address"];
+    }
+
+    $sql = "select trans_id, DATE_FORMAT(m.trans_date, '%d-%m-%Y') AS trans_date, details,ver, customer, trans_amount, pending, gst, tally, created_by, created_on, modified_by, modified_on, active_status, COMPANY_NAME, CUSTOMER_NAME, CUSTOMER_ADDRESS, CUSTOMER_GST, customer_mobile,year_part FROM sales_trans m where m.active_status='A' and m.trans_id='" . $trans_id . "' order by 1";
+    $res_m = $conn->query($sql);
+    $row_m = $res_m->fetch_assoc();
+
+    $gst_type = $row_m["gst"]; // Y or N
+    $ver = $row_m["ver"];
+    ?>
+
+    <div class="receipt-container" id="content-to-pdf">
+        <div class="header-section">
+            <div class="logo-left">
+                <img src="img/expert_logo.png" alt="Expert Wheel Care">
+            </div>
+            <div class="logo-center">
+                <img src="img/EWC-logo-removebg-preview.png" alt="Expert Wheel Care">
+            </div>
+            <div class="header-details">
+                <div class="address-text">
+                    <?php echo $print_address; ?>
+                </div>
+                <?php if(!empty($company["company_gst"])) { ?>
+                <div style="color: #003366; margin-top: 5px;">GSTIN : <?php echo $company["company_gst"]; ?></div>
+                <?php } ?>
+                <div style="margin-top: 2px;">&#9742; <?php echo $company["company_mobile"]; ?></div>
+            </div>
+        </div>
+        <div class="invoice-type-banner"><?php echo ($gst_type == "Y") ? "TAX INVOICE" : "CASH BILL"; ?></div>
+
+        <div class="details-grid">
+            <div class="details-box">
+                <div class="section-title">CUSTOMER DETAILS</div>
+                <div class="info-row">
+                    <div class="info-label">COMPANY:</div>
+                    <div class="info-value"><?php echo $row_m["COMPANY_NAME"] ? $row_m["COMPANY_NAME"] : "NA - Not Provided"; ?></div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">OWNER:</div>
+                    <div class="info-value"><?php echo $row_m["CUSTOMER_NAME"] ? $row_m["CUSTOMER_NAME"] : "NA - Not Provided"; ?></div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">MOBILE:</div>
+                    <div class="info-value"><?php echo $row_m["customer_mobile"] ? $row_m["customer_mobile"] : "NA - Not Provided"; ?></div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">ADDRESS:</div>
+                    <div class="info-value"><?php echo $row_m["CUSTOMER_ADDRESS"] ? $row_m["CUSTOMER_ADDRESS"] : "NA - Not Provided"; ?></div>
+                </div>
+                <?php if ($gst_type == "Y" && !empty($row_m["CUSTOMER_GST"])) { ?>
+                    <div class="info-row">
+                        <div class="info-label">GSTIN:</div>
+                        <div class="info-value"><?php echo $row_m["CUSTOMER_GST"]; ?></div>
+                    </div>
+                <?php } ?>
+            </div>
+            <div class="details-box">
+                <div class="section-title">INVOICE INFO</div>
+                <div class="info-row">
+                    <div class="info-label">INVOICE NO:</div>
+                    <div class="info-value"><strong><?php echo $row_m["year_part"].$row_m["trans_id"]; ?></strong></div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">DATE:</div>
+                    <div class="info-value"><?php echo $row_m["trans_date"]; ?></div>
+                </div>
+            </div>
+        </div>
+
+        <?php
+        $tax_percent_text = "%";
+        if ($gst_type == "Y") {
+            $sql_tax = "SELECT tax, tax_sgst, tax_igst FROM sales_trans_det WHERE trans_id='" . $trans_id . "' AND active_status='A' AND ver='" . $ver . "' LIMIT 1";
+            $res_tax = $conn->query($sql_tax);
+            if ($res_tax && $row_tax = $res_tax->fetch_assoc()) {
+                if (empty($row_m["CUSTOMER_GST"]) && $row_tax["tax_igst"] > 0) {
+                    $row_tax["tax"] = $row_tax["tax_igst"] / 2;
+                    $row_tax["tax_sgst"] = $row_tax["tax_igst"] / 2;
+                    $row_tax["tax_igst"] = 0;
+                }
+                if ($row_tax["tax_igst"] > 0) {
+                    $tax_percent_text = floatval($row_tax["tax_igst"]) . "%";
+                } else {
+                    $tax_percent_text = floatval($row_tax["tax"] + $row_tax["tax_sgst"]) . "%";
+                }
+            }
+        }
+        ?>
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th width="40">SL</th>
+                    <th width="250">ITEM DESCRIPTION</th>
+                    <th width="70">HSN</th>
+                    <th width="50">QTY</th>
+                    <th width="80">UNIT PRICE</th>
+                    <th width="80">TAXABLE AMOUNT</th>
+                    <?php if ($gst_type == "Y") { ?>
+                        <th width="80">GST (<?php echo $tax_percent_text; ?>)</th>
+                    <?php } ?>
+                    <th width="90">TOTAL</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php
+                $sql_d = "SELECT trans_id,subtrans_id,d.price, i.item_id,i.item_name,i.item_description,i.hsn,d.cost,d.qty,d.tax,d.tax_amount,d.total,d.tax_sgst,d.tax_amount_sgst,d.tax_igst, d.tax_amount_igst FROM sales_trans_det d,item i where i.item_id=d.item_id and d.trans_id='" . $trans_id . "' and d.active_status='A' and ver='" . $ver . "' and account='Y' and qty>0 and total>0 order by subtrans_id";
+                $res_d = $conn->query($sql_d);
+                $sl = 1;
+                $total_gross = 0;
+                $total_tax = 0;
+                $grand_total = 0;
+
+                while ($row = $res_d->fetch_assoc()) {
+                    if (empty($row_m["CUSTOMER_GST"]) && $row["tax_igst"] > 0) {
+                        $row["tax"] = $row["tax_igst"] / 2;
+                        $row["tax_amount"] = $row["tax_amount_igst"] / 2;
+                        $row["tax_sgst"] = $row["tax_igst"] / 2;
+                        $row["tax_amount_sgst"] = $row["tax_amount_igst"] / 2;
+                        $row["tax_igst"] = 0;
+                        $row["tax_amount_igst"] = 0;
+                    }
+
+                    $gross = $row["price"]; // d.price is amount without tax
+                    $line_total = $row["total"]; // d.total is amount with tax
+                    $tax = $row["tax_amount"] + $row["tax_amount_sgst"] + $row["tax_amount_igst"];
+
+                    $total_gross += $gross;
+                    $total_tax += $tax;
+                    $grand_total += $line_total;
+                    ?>
+                    <tr>
+                        <td class="text-center"><?php echo $sl++; ?></td>
+                        <td><strong><?php echo $row["item_name"]; ?></strong></td>
+                        <td class="text-center"><?php echo $row["hsn"]; ?></td>
+                        <td class="text-center"><?php echo floatval($row["qty"]); ?></td>
+                        <td class="text-right"><?php echo number_format($row["cost"], 2); ?></td>
+                        <td class="text-right"><?php echo number_format($gross, 2); ?></td>
+                        <?php if ($gst_type == "Y") { ?>
+                            <td class="text-right">
+                            <?php 
+                                echo number_format($tax, 2); 
+                            ?>
+                            </td>
+                        <?php } ?>
+                        <td class="text-right"><strong><?php echo number_format($line_total, 2); ?></strong></td>
+                    </tr>
+                <?php } ?>
+                <tr>
+                    <td colspan="<?php echo ($gst_type == 'Y') ? '7' : '6'; ?>" class="text-right" style="font-size: 14px; font-weight: bold;">GRAND TOTAL</td>
+                    <td class="text-right" style="font-size: 14px; font-weight: bold;"><?php echo number_format($grand_total, 2); ?></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="amount-words">
+            TOTAL AMOUNT IN WORDS: INR. <?php echo numberToWords($grand_total); ?> ONLY
+        </div>
+
+        <?php if($gst_type == "Y") { ?>
+            <!-- GST Summary Table -->
+            <table class="items-table" style="margin-top: 5px; font-size: 10px;">
+                <thead>
+                    <tr>
+                        <th>HSN</th>
+                        <th>Taxable Value</th>
+                        <th>CGST (%)</th>
+                        <th>CGST Amt</th>
+                        <th>SGST (%)</th>
+                        <th>SGST Amt</th>
+                        <th>IGST (%)</th>
+                        <th>IGST Amt</th>
+                        <th>Total Tax</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php 
+                    $res_d->data_seek(0);
+                    $tax_amount_sgst = 0;
+                    $tax_amount_cgst = 0;
+                    $tax_amount_igst = 0;
+                    $total_taxable = 0;
+                    $total_all_tax = 0;
+                    
+                    while ($row = $res_d->fetch_assoc()) {
+                        if (empty($row_m["CUSTOMER_GST"]) && $row["tax_igst"] > 0) {
+                            $row["tax"] = $row["tax_igst"] / 2;
+                            $row["tax_amount"] = $row["tax_amount_igst"] / 2;
+                            $row["tax_sgst"] = $row["tax_igst"] / 2;
+                            $row["tax_amount_sgst"] = $row["tax_amount_igst"] / 2;
+                            $row["tax_igst"] = 0;
+                            $row["tax_amount_igst"] = 0;
+                        }
+
+                        $tax_amount_sgst += $row["tax_amount_sgst"];
+                        $tax_amount_cgst += $row["tax_amount"];
+                        $tax_amount_igst += $row["tax_amount_igst"];
+                        $total_taxable += $row["price"];
+                        $row_total_tax = $row["tax_amount"] + $row["tax_amount_sgst"] + $row["tax_amount_igst"];
+                        $total_all_tax += $row_total_tax;
+                        ?>
+                        <tr>
+                            <td class="text-center"><?php echo $row["hsn"]; ?></td>
+                            <td class="text-right"><?php echo number_format($row["price"], 2); ?></td>
+                            
+                            <td class="text-center"><?php echo ($row["tax"] > 0) ? floatval($row["tax"]) . "%" : "-"; ?></td>
+                            <td class="text-right"><?php echo ($row["tax_amount"] > 0) ? number_format($row["tax_amount"], 2) : "-"; ?></td>
+                            
+                            <td class="text-center"><?php echo ($row["tax_sgst"] > 0) ? floatval($row["tax_sgst"]) . "%" : "-"; ?></td>
+                            <td class="text-right"><?php echo ($row["tax_amount_sgst"] > 0) ? number_format($row["tax_amount_sgst"], 2) : "-"; ?></td>
+                            
+                            <td class="text-center"><?php echo ($row["tax_igst"] > 0) ? floatval($row["tax_igst"]) . "%" : "-"; ?></td>
+                            <td class="text-right"><?php echo ($row["tax_amount_igst"] > 0) ? number_format($row["tax_amount_igst"], 2) : "-"; ?></td>
+                            
+                            <td class="text-right"><strong><?php echo number_format($row_total_tax, 2); ?></strong></td>
+                        </tr>
+                    <?php } ?>
+                    <tr>
+                        <td class="text-center"><strong>Total</strong></td>
+                        <td class="text-right"><strong><?php echo number_format($total_taxable, 2); ?></strong></td>
+                        <td class="text-right"></td>
+                        <td class="text-right"><strong><?php echo ($tax_amount_cgst > 0) ? number_format($tax_amount_cgst, 2) : "-"; ?></strong></td>
+                        <td class="text-right"></td>
+                        <td class="text-right"><strong><?php echo ($tax_amount_sgst > 0) ? number_format($tax_amount_sgst, 2) : "-"; ?></strong></td>
+                        <td class="text-right"></td>
+                        <td class="text-right"><strong><?php echo ($tax_amount_igst > 0) ? number_format($tax_amount_igst, 2) : "-"; ?></strong></td>
+                        <td class="text-right"><strong><?php echo number_format($total_all_tax, 2); ?></strong></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Bank Details -->
+            <table class="items-table" style="margin-top: 10px; font-size: 10px;">
+                <thead>
+                    <tr>
+                        <th class="text-left" style="padding-left: 5px;">Bank Name</th>
+                        <th class="text-left" style="padding-left: 5px;">Bank A/C</th>
+                        <th class="text-left" style="padding-left: 5px;">IFSC</th>
+                        <th class="text-left" style="padding-left: 5px;">Branch</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="text-left" style="padding-left: 5px;"><?php echo $company["company_bank"]; ?></td>
+                        <td class="text-left" style="padding-left: 5px;"><?php echo $company["company_ac"]; ?></td>
+                        <td class="text-left" style="padding-left: 5px;"><?php echo $company["company_ifsc"]; ?></td>
+                        <td class="text-left" style="padding-left: 5px;"><?php echo $company["company_branch"]; ?></td>
+                    </tr>
+                </tbody>
+            </table>
+        <?php } ?>
+
+        <div style="margin-top: 15px; font-size: 10px;">
+            <div class="section-title">Terms & Conditions</div>
+            <ol style="margin: 5px 0 10px 20px; padding: 0;">
+                <li>Goods once sold cannot be taken back.</li>
+                <li>Manufacturing defects will be replaced by the manufacturing company only.</li>
+                <li>No dealer guarantee for manufacturing defects.</li>
+                <li>All disputes are subject to Anakapalli jurisdiction only.</li>
+            </ol>
+        </div>
+
+        <div class="signature-section">
+            <div style="width: 30%;"></div>
+            <div class="sig-box">AUTHORISED SIGNATORY</div>
+        </div>
+    </div>
+
+    <script src="js/jquery-3.6.0.js"></script>
+    <script src="js/html2pdf.bundle.min.js"></script>
+    <script>
+        function downloadPDF() {
+            var element = document.getElementById('content-to-pdf');
+            var opt = {
+                margin: 0.2,
+                filename: 'Sales_Receipt_<?php echo $trans_id; ?>.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, scrollY: 0 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
         }
 
-    };
-
-    html2pdf()
-    .set(opt)
-    .from(element)
-    .save();
-
-});
-
-</script>
- <!-- <script>
-  $(document).ready(function () {
-   
-      var element = document.getElementById('content-to-pdf');
-
-      var opt = {
-        margin:       0.2,
-        filename:     'Trans_Receipt_CCRS.pdf',
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  {
-          scale: 1.5,
-          scrollY: 0
-        },
-        jsPDF:        {
-          unit: 'in',
-          format: 'a4',
-          orientation: 'portrait'
-        },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-      };
-
-      html2pdf().set(opt).from(element).save();
-    
-  });
- </script> -->
-
+        $(document).ready(function () {
+            var action = "<?php echo $action; ?>";
+            if (action == "DOWNLOAD") {
+                downloadPDF();
+            } else {
+                window.print();
+            }
+        });
+    </script>
 </body>
 </html>

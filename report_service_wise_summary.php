@@ -112,10 +112,10 @@ $serv_cnt++;
 $sql="SELECT IFNULL(t.shop,'1000002') as shop_id";
 
 foreach($serv_array as $sid){
-$sql.=", SUM(CASE WHEN d.service_id='$sid' THEN (d.total+d.tax_amount) ELSE 0 END) AS s_$sid";
+$sql.=", SUM(CASE WHEN d.service_id='$sid' THEN (d.total + IFNULL(d.tax_amount, 0) + IFNULL(d.tax_amount_sgst, 0)) ELSE 0 END) AS s_$sid";
 }
 
-$sql.=", SUM(d.total+d.tax_amount) as grand_total
+$sql.=", SUM(d.total + IFNULL(d.tax_amount, 0) + IFNULL(d.tax_amount_sgst, 0)) as grand_total
 FROM service_trans t
 JOIN service_trans_det d ON t.trans_id=d.trans_id
 WHERE t.active_status='A'
