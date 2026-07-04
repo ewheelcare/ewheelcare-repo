@@ -1,14 +1,39 @@
 <?php
+
+session_start();
+
 include "db_config.php";
 
-file_put_contents(
-    "sales_debug.log",
-    date('Y-m-d H:i:s') .
-    " | " .
-    json_encode($_POST) .
-    PHP_EOL,
-    FILE_APPEND
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+
+mysqli_report(
+    MYSQLI_REPORT_ERROR |
+    MYSQLI_REPORT_STRICT
 );
+
+header('Content-Type: application/json');
+
+date_default_timezone_set("Asia/Kolkata");
+
+try {
+
+    $conn->begin_transaction();
+
+    $user_id = $_SESSION['user_id'] ?? null;
+    $shop_id = $_SESSION['shop'] ?? null;
+
+    if (!$user_id) {
+        throw new Exception(
+            "Session expired. Please login again."
+        );
+    }
+
+    if (!$shop_id) {
+        throw new Exception(
+            "Shop not found in session."
+        );
+    }
 
 $item_id = $_POST["item_id"];
 
@@ -27,11 +52,14 @@ $qty = isset($_POST["qty"]) ? $_POST["qty"] : 0;
 
 $price1 = $_POST["price"];
 $roundoff = $_POST["roundoff"];
+$discount = $_POST["discount"] ?? 0;
 
-if((float)$total <= 0){
-    exit;
+/*if((float)$total <= 0){
+    throw new Exception(
+        "Total amount must be greater than zero."
+    );
 }
-
+*/
 $account = (!isset($_POST["account"]) || $_POST["account"] == "") 
     ? "Y" 
     : $_POST["account"];
@@ -43,8 +71,6 @@ $invoice_discount = isset($_POST["invoice_discount"]) ? (float)$_POST["invoice_d
 $invoice_roundoff = isset($_POST["invoice_roundoff"]) ? (float)$_POST["invoice_roundoff"] : 0;
 $invoice_final_amount = isset($_POST["invoice_final_amount"]) ? (float)$_POST["invoice_final_amount"] : 0;
 
-$shop_id = isset($_COOKIE["shop"]) ? $_COOKIE["shop"] : '';
-$user_id = isset($_COOKIE["user_id"]) ? $_COOKIE["user_id"] : '';
 
 $ver = $_POST["ver"];
 $perc = $_POST["perc"];
@@ -101,15 +127,19 @@ if($result_stock && $result_stock->num_rows > 0)
             FILE_APPEND
         );
 
-        die("Error: Available Stock=".$effective_stock." Requested=".$qty);
+        throw new Exception(
+    "Available Stock=".$effective_stock.
+    " Requested=".$qty
+);
     }
 }
 else
 {
     // No inventory row found = zero stock
     if((float)$qty > 0 && $account !== 'N'){
-        die("Error: Available Stock=0 Requested=".$qty);
-    }
+     throw new Exception(
+    "Available Stock=0 Requested=".$qty
+);    }
 }
 
 /*
@@ -151,17 +181,24 @@ if(
     (float)$total > 0 &&
     (float)$total < 2
 ){
+    $conn->rollback();
+
+    echo json_encode([
+        "status" => "skipped",
+        "message" => "Skipped low value mapped row"
+    ]);
+
     exit;
 }
 
-$cost      = round((float)$cost);
-$total     = round((float)$total);
-$tax       = round((float)$tax);
-$tax_sgst  = round((float)$tax_sgst);
-$tax_igst  = round((float)$tax_igst);
-$discount  = round((float)($discount ?? 0));
-$price1    = round((float)$price1);
-$roundoff  = round((float)$roundoff);
+$cost      = round((float)$cost, 2);
+$total     = round((float)$total, 2);
+$tax       = round((float)$tax, 2);
+$tax_sgst  = round((float)$tax_sgst, 2);
+$tax_igst  = round((float)$tax_igst, 2);
+$discount  = round((float)($discount ?? 0), 2);
+$price1    = round((float)$price1, 2);
+$roundoff  = round((float)$roundoff, 2);
 
 
 
@@ -225,9 +262,7 @@ VALUES
 )
 ";
 
-if(!$conn->query($sql)){
-    die("Error : ".$conn->error);
-}
+$conn->query($sql);
 
 $new_id = $conn->insert_id;
 
@@ -237,9 +272,8 @@ SET subtrans_id='".$new_id."'
 WHERE id='".$new_id."'
 ";
 
-if(!$conn->query($sql_sub)){
-    die("Error : ".$conn->error);
-}
+$conn->query($sql_sub);
+
 
 $subtrans_id = $new_id;
 
@@ -310,12 +344,61 @@ $conn->query($sql_upd);
 /*
  * RESPONSE
  */
-echo $subtrans_id
-    ."~".$grand_total
-    ."~".$tax_amount
-    ."~".$tax_amount_sgst
-    ."~".$tax_amount_igst
-    ."~".($price_sum - $discount_sum + $roundoff_sum);
+$conn->commit();
 
+echo json_encode([
+    "status" => "success",
+    "message" => "Item saved successfully",
+
+    "subtrans_id" => $subtrans_id,
+
+    "totals" => [
+
+        "grand_total" =>
+            round($grand_total, 2),
+
+        "cgst_amount" =>
+            round($tax_amount, 2),
+
+        "sgst_amount" =>
+            round($tax_amount_sgst, 2),
+
+        "igst_amount" =>
+            round($tax_amount_igst, 2),
+
+        "price_amount" =>
+            round(
+                $price_sum
+                - $discount_sum
+                + $roundoff_sum,
+                2
+            ),
+
+        "final_amount" =>
+            round(
+                $safe_final_amount,
+                2
+            )
+    ]
+]);
+} catch(Exception $e){
+
+    if(isset($conn)){
+        $conn->rollback();
+    }
+
+    error_log(
+        "add_sales_det.php | ".
+        date("Y-m-d H:i:s").
+        " | User: ".($user_id ?? 'UNKNOWN').
+        " | Trans: ".($trans_id ?? '').
+        " | Error: ".$e->getMessage()
+    );
+
+    echo json_encode([
+        "status" => "error",
+        "message" => $e->getMessage()
+    ]);
+}
 $conn->close();
 ?>

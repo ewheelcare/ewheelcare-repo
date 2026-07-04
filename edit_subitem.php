@@ -9,6 +9,6 @@ $perc = $_POST["perc"];
 $sql = "update groupassociation set perc='".$perc."' where itemgroup_id='".$itemgroup_id."' and item_id='".$item_id."'";
 $result = $conn->query($sql);
 //echo $sql;
-echo "Sub Item added Successfully";
+echo "Address added Successfully";
 $conn->close();
 ?>

@@ -26,7 +26,6 @@ $module = $_GET["param"] ?? '';
                     Master Maintenance : <?= htmlspecialchars($module) ?>
                 </div>
 
-                <!-- Toolbar row: Add button + Status filter (item only) -->
                 <div class="d-flex align-items-center mb-3 flex-wrap" style="gap:12px;">
                     <button type="button" class="btn btn-primary" id="add_opener">
                         Add <?= htmlspecialchars($module) ?>
@@ -46,7 +45,6 @@ $module = $_GET["param"] ?? '';
                     <?php endif; ?>
                 </div>
 
-                <!-- Legend — item module only -->
                 <?php if ($module === 'item'): ?>
                 <div class="mb-2" style="font-size:13px;">
                     <span style="display:inline-block;width:10px;height:10px;border-radius:50%;
@@ -165,7 +163,6 @@ $('#add_opener').on('click', function () {
         });
 });
 
-// ── Add Save ──────────────────────────────────────────────────────────────────
 $('#add_submit').on('click', function (e) {
     e.preventDefault();
     var isValid = true;
@@ -186,7 +183,6 @@ $('#add_submit').on('click', function (e) {
         .fail(function () { alert('Something went wrong.'); });
 });
 
-// ── Edit Save ─────────────────────────────────────────────────────────────────
 $(document).on('click', '#edit_submit', function (e) {
     e.preventDefault();
     var form = $("#generic_form_update");
@@ -196,7 +192,6 @@ $(document).on('click', '#edit_submit', function (e) {
         .fail(function () { alert('Something went wrong.'); });
 });
 
-// ── Load DataTable on ready ───────────────────────────────────────────────────
 $(document).ready(function () {
     if (module === 'item') {
         loadItemTable('A');
@@ -205,7 +200,6 @@ $(document).ready(function () {
     }
 });
 
-// ── Item Table ────────────────────────────────────────────────────────────────
 function loadItemTable(status) {
     $.post("item_fetch.php", { status: status }, function (jsonData) {
 
@@ -247,7 +241,6 @@ function loadItemTable(status) {
                 render: function (data, type, row) {
                     var id = row.item_id;
 
-                    // Deleted view: show Restore icon only on parent rows
                     if (isDeleted) {
                         if (row._role === 'sub') return '—';
                         return '<div style="white-space:nowrap;">'
@@ -257,7 +250,6 @@ function loadItemTable(status) {
                              + '</div>';
                     }
 
-                    // Active view: edit on sub (opens parent), edit+delete on parent
                     if (row._role === 'sub') {
                         return '<div style="white-space:nowrap;">'
                              + '<button class="btn btn-sm" onclick="editFunction(' + row._parent_id + ')" '
@@ -294,7 +286,6 @@ function loadItemTable(status) {
     }, 'json');
 }
 
-// ── Generic Table ─────────────────────────────────────────────────────────────
 function loadGenericTable() {
     $.post("generic_fetch.php", { module: module }, function (jsonData) {
         if (!jsonData || jsonData.length === 0) {
@@ -311,6 +302,11 @@ function loadGenericTable() {
             orderable: false,
             render: function (data, type, row) {
                 var id = row[Object.keys(row)[0]];
+                var extraBtns = '';
+                if (module === 'customer') {
+                    extraBtns = '<a class="btn btn-sm" href="attach_gst.php?customer_id=' + id + '" title="Attach GST" style="color:#17a2b8;background:none;border:none;font-size:16px;padding:2px 6px;"><i class="fas fa-file-invoice-dollar"></i></a>' + 
+                                '<a class="btn btn-sm" href="attach_address.php?customer_id=' + id + '" title="Attach Address" style="color:#17a2b8;background:none;border:none;font-size:16px;padding:2px 6px;"><i class="fas fa-map-marker-alt"></i></a>';
+                }
                 return '<div style="white-space:nowrap;">'
                      + '<button class="btn btn-sm" onclick="editFunction(' + id + ')" '
                      + 'title="Edit" style="color:#f6a800;background:none;border:none;font-size:16px;padding:2px 6px;">'
@@ -318,6 +314,7 @@ function loadGenericTable() {
                      + '<button class="btn btn-sm" onclick="delFunction(' + id + ')" '
                      + 'title="Delete" style="color:#e74c3c;background:none;border:none;font-size:16px;padding:2px 6px;">'
                      + '<i class="fas fa-trash-alt"></i></button>'
+                     + extraBtns
                      + '</div>';
             }
         });
@@ -325,7 +322,6 @@ function loadGenericTable() {
     }, 'json');
 }
 
-// ── Edit ──────────────────────────────────────────────────────────────────────
 function editFunction(id) {
     if (module === "item") {
         window.location.href = "item_create.php?item_id=" + id;
@@ -339,7 +335,6 @@ function editFunction(id) {
         });
 }
 
-// ── Soft Delete ───────────────────────────────────────────────────────────────
 function delFunction(id) {
     if (!confirm("Are you sure you want to delete?")) return;
     if (module === "item") {
@@ -352,7 +347,6 @@ function delFunction(id) {
         .done(function () { alert("Entry deleted successfully"); location.reload(); });
 }
 
-// ── Restore (item only) ───────────────────────────────────────────────────────
 function restoreFunction(id) {
     if (!confirm("Restore this item and its sub items to Active?")) return;
     $.post("item_restore.php", { item_id: id })

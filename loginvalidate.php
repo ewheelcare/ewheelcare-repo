@@ -1,4 +1,4 @@
-<?php
+    <?php
 session_start();
 include "db_config.php";
 
@@ -11,10 +11,9 @@ $response_obj = [];
 
 // Fetch user
 $stmt = $conn->prepare("
-    SELECT l.user_id, l.user_name, l.user_pwd, r.user_role 
-    FROM expert_login l 
-    JOIN expert_login_role r ON l.user_id = r.user_id 
-    WHERE l.user_id = ?
+    SELECT user_id, user_name, user_pwd
+    FROM expert_login
+    WHERE user_id = ?
 ");
 
 $stmt->bind_param("s", $uid);
@@ -22,58 +21,55 @@ $stmt->execute();
 $result = $stmt->get_result();
 if ($row = $result->fetch_assoc()) {
 
-    // 🔐 PASSWORD CHECK
-    // If using plain text → keep as is
-    // If using hash → use password_verify()
-    
-    if ($pwd === $row['user_pwd']) {
-    // if (password_verify($pwd, $row['user_pwd'])) {
+    // Inline decrypt function
+    function inline_decrypt($hash) {
+        if (ctype_xdigit($hash)) {
+            $decoded = base64_decode(hex2bin($hash));
+            if ($decoded) return str_rot13($decoded);
+        }
+        return $hash; // fallback
+    }
 
-        $user_id   = $row['user_id'];
+    // 🔐 PASSWORD CHECK
+    if (inline_decrypt($row['user_pwd']) === $pwd || $pwd === $row['user_pwd']) {
+
+        $user_id = $row['user_id'];
         $user_name = $row['user_name'];
-        $user_role = $row['user_role'];
 
         // ✅ SESSION (SECURE)
-        $_SESSION["user_id"]   = $user_id;
+        $_SESSION["user_id"] = $user_id;
         $_SESSION["user_name"] = $user_name;
-        $_SESSION["user_role"] = $user_role;
-        $_SESSION["shop"]      = $shop;
+        $_SESSION["shop"] = $shop;
         $_SESSION["shop_name"] = $shop_name;
-        $_SESSION["shop_id"]      = $shop;
+        $_SESSION["shop_id"] = $shop;
+
         // ✅ COOKIE (for existing sidebar compatibility)
         setcookie("user_id", $user_id, time() + 3600, "/");
         setcookie("user_name", $user_name, time() + 3600, "/");
-        setcookie("user_role", $user_role, time() + 3600, "/");
 
         setcookie("shop", $shop, time() + 3600, "/");
         setcookie("shop_name", $shop_name, time() + 3600, "/");
 
         // 🔥 ROLE → PERMISSIONS MAPPING
-        // You MUST define this properly based on your system
+        $role_stmt = $conn->prepare("SELECT user_role FROM expert_login_role WHERE user_id = ? AND active_status = 'A'");
+        $role_stmt->bind_param("s", $user_id);
+        $role_stmt->execute();
+        $role_result = $role_stmt->get_result();
 
-        if ($user_role == "SA") {
-            setcookie("SA", "Y", time() + 3600, "/");
+        $first_role = "";
+        while ($role_row = $role_result->fetch_assoc()) {
+            $current_role = $role_row['user_role'];
+            if ($first_role === "") {
+                $first_role = $current_role;
+            }
+            // Set cookie for each role the user has
+            setcookie($current_role, "Y", time() + 3600, "/");
+            $_SESSION[$current_role] = "Y";
         }
 
-        if ($user_role == "MASTER") {
-            setcookie("MASTER", "Y", time() + 3600, "/");
-        }
-
-        if ($user_role == "ENTRY") {
-            setcookie("ENTRY", "Y", time() + 3600, "/");
-        }
-
-        if ($user_role == "REPORT") {
-            setcookie("REPORT", "Y", time() + 3600, "/");
-        }
-
-        if ($user_role == "DASHBOARD") {
-            setcookie("DASHBOARD", "Y", time() + 3600, "/");
-        }
-
-        if ($user_role == "INVENTORY") {
-            setcookie("INVENTORY", "Y", time() + 3600, "/");
-        }
+        // Set legacy user_role to the first found role
+        $_SESSION["user_role"] = $first_role;
+        setcookie("user_role", $first_role, time() + 3600, "/");
 
         $response_obj["status"] = "S";
         $response_obj["message"] = "Login Successful";

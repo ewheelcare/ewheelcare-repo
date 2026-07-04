@@ -1,8 +1,5 @@
 <?php
-/**
- * item_restore.php
- * Restores a soft-deleted parent item and all its linked sub items back to Active.
- */
+
 include 'db_config.php';
 
 $item_id = isset($_POST['item_id']) ? intval($_POST['item_id']) : 0;

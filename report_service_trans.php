@@ -132,7 +132,7 @@ $sql = "SELECT
             st.customer_mobile,
             st.customer_gst,
             st.vehicle_no,
-            p.amount,
+            COALESCE(CAST(NULLIF(t.amount_settled, '') AS DECIMAL(10,2)), 0) AS amount,
             p.mode,
             p.shop_id,
             IFNULL(p.payment_date,p.created_on) AS trans_date,
@@ -175,9 +175,9 @@ if (isset($shop_param) && $shop_param != "") {
 /* ORDER BY */
 $sql .= " ORDER BY
             p.shop_id,
+			p.mode,
 			trans_date,
-            COALESCE(NULLIF(p.customer_name,''), c.owner_name),
-			p.mode ";
+            COALESCE(NULLIF(p.customer_name,''), c.owner_name) ";
 
 
 /* DEBUG */
@@ -200,7 +200,7 @@ $customer_name=$row["customer_name"];
 $customer_mobile=$row["customer_mobile"];
 $customer_gst=$row["customer_gst"];
 $trans_amount=$row["amount"];
-$mode=$row["mode"];
+$mode=strtoupper(trim($row["mode"]));
 $shop_name=$row["shop_id"];
 $invoice=$row["trans_id"];
 if(($prev_shop!=$shop_name || $prev_mode!=$mode)&& ($prev_mode!="")){?>
@@ -219,11 +219,11 @@ if(($prev_shop!=$shop_name || $prev_mode!=$mode)&& ($prev_mode!="")){?>
 	<td><?php echo $customer_gst;?></td>
 	<td><?php echo $mode;?> </td>
 	
-	<td><?php echo $shop_name;?> </td>
-	<td><?php echo $trans_amount;?></td>
+	<td><?php echo $row["shop_id"];?> </td>
+	<td><?php echo $row["amount"];?></td>
 	
 	</tr>
-<?php $total_amount+=$trans_amount;
+<?php $total_amount += (float)$trans_amount;
 $prev_mode=$mode;$prev_shop=$shop_name;
 $slno=$slno+1; }
 		?>
@@ -305,7 +305,7 @@ while ($row = $result->fetch_assoc()) {
 $date = $row["date"];
 $amount= $row["amount"];
 $shop_name=$row["shop_id"];
-$mode=$row["paytype_name"];
+$mode=strtoupper(trim($row["paytype_name"]));
 $description=$row["description"];
 $total_expenditure+=$amount;
 ?>
@@ -352,12 +352,20 @@ $sql = "SELECT * FROM (
            INFLOW (INCOME)
         ========================= */
         SELECT 
-            SUM(p.amount) AS amount,
+            SUM(IFNULL(pt.service_amount, 0) + (p.amount - IFNULL(pt.total_settled, 0))) AS amount,
             p.shop_id AS shop_name,
             p.mode,
             'INFLOW (INCOME)' AS nature
         FROM payments p
-        WHERE p.active_status='A' ";
+        LEFT JOIN (
+            SELECT 
+                pt.payment_id,
+                SUM(CASE WHEN pt.mode = 'service' THEN COALESCE(CAST(NULLIF(pt.amount_settled, '') AS DECIMAL(10,2)), 0) ELSE 0 END) AS service_amount,
+                SUM(CASE WHEN pt.mode IN ('service', 'sales') THEN COALESCE(CAST(NULLIF(pt.amount_settled, '') AS DECIMAL(10,2)), 0) ELSE 0 END) AS total_settled
+            FROM pay_track pt
+            GROUP BY pt.payment_id
+        ) pt ON (p.payment_id = pt.payment_id)
+        WHERE p.active_status='A' AND p.nature='CREDIT' AND (IFNULL(pt.service_amount, 0) + (p.amount - IFNULL(pt.total_settled, 0))) > 0 ";
 
 
 /* DATE FILTER */
@@ -531,7 +539,7 @@ $mode_total = [];
 foreach ($arr_total as $key => $value)
 {
     $tmp  = explode("~",$key);
-    $mode = $tmp[1];
+    $mode = strtoupper(trim($tmp[1]));
 
     if (!isset($mode_total[$mode]))
         $mode_total[$mode] = 0;

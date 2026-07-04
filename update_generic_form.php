@@ -45,9 +45,8 @@ $value_list = [];
 foreach ($data as $entry) {
 
     $table_name = explode(".", $entry["Save_to"])[0];
-    
     $column = explode(".", $entry["Save_to"])[1];
-    
+
     $json_list[$table_name] = ($json_list[$table_name] ?? "") . "," . $column;
 
     $actual_value = $_POST[$column] ?? '';

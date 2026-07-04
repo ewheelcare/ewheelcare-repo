@@ -36,11 +36,18 @@ try {
         $count++;
         if ($count > $limit) break;
 
+        // Calculate pending balance only for matched vendor
+        $vid = (int)$row['vendor_id'];
+        $pend_sql = "SELECT IFNULL(SUM(pending), 0) AS total_pending FROM receipt_trans WHERE vendor = $vid AND active_status = 'A'";
+        $pend_res = $conn->query($pend_sql);
+        $pending  = $pend_res ? (float)$pend_res->fetch_assoc()['total_pending'] : 0;
+
         $label   = $row['company_name'] . ($row['owner_mobile'] ? ' (' . $row['owner_mobile'] . ')' : '');
         $items[] = [
             'id'      => $row['vendor_id'] . '~' . $row['company_name'],
             'text'    => $label,
-            'details' => $row['owner_name']
+            'details' => $row['owner_name'],
+            'pending' => number_format($pending, 2)
         ];
     }
 

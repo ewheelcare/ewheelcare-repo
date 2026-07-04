@@ -2,8 +2,8 @@
 include "db_config.php";
 
 $trans_id = $_POST["trans_id"];
-$ver      = $_POST["ver"];
-$user_id  = $_COOKIE["user_id"];
+$ver = $_POST["ver"];
+$user_id = $_COOKIE["user_id"];
 
 $new_ver = $ver + 1;
 
@@ -14,21 +14,21 @@ try {
 
     /* Update Header */
 
-  
+
 
     $sql = "
     UPDATE sales_trans
     SET
         active_status='D',
-        ver='".$new_ver."',
+        ver='" . $new_ver . "',
         modified_on=CURDATE(),
-        modified_by='".$user_id."'
-    WHERE trans_id='".$trans_id."'
+        modified_by='" . $user_id . "'
+    WHERE trans_id='" . $trans_id . "'
     ";
 
-     //echo "ERROR : ".$sql;exit;
+    //echo "ERROR : ".$sql;exit;
 
-    if(!$conn->query($sql)){
+    if (!$conn->query($sql)) {
         throw new Exception($conn->error);
     }
 
@@ -38,19 +38,19 @@ try {
     SELECT COUNT(*) CNT
     FROM sales_trans_det
     WHERE
-        trans_id='".$trans_id."'
-        AND ver='".$new_ver."'
+        trans_id='" . $trans_id . "'
+        AND ver='" . $new_ver . "'
     ";
 
     $result = $conn->query($sql);
 
-    if(!$result){
+    if (!$result) {
         throw new Exception($conn->error);
     }
 
     $row = $result->fetch_assoc();
 
-    if($row["CNT"] == 0){
+    if ($row["CNT"] == 0) {
 
         $sql = "
         INSERT INTO sales_trans_det
@@ -113,16 +113,16 @@ try {
             price,
             remarks,
             parent,
-            '".$new_ver."',
+            '" . $new_ver . "',
             perc
         FROM sales_trans_det
         WHERE
-            trans_id='".$trans_id."'
-            AND ver='".$ver."'
+            trans_id='" . $trans_id . "'
+            AND ver='" . $ver . "'
             AND active_status <> 'Z'
         ";
 
-        if(!$conn->query($sql)){
+        if (!$conn->query($sql)) {
             throw new Exception($conn->error);
         }
     }
@@ -131,12 +131,11 @@ try {
 
     echo "SUCCESS";
 
-}
-catch(Exception $e){
+} catch (Exception $e) {
 
     $conn->rollback();
 
-    echo "ERROR : ".$e->getMessage();
+    echo "ERROR : " . $e->getMessage();
 }
 
 $conn->close();

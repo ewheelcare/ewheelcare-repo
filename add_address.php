@@ -11,7 +11,7 @@ $customer_id = $_POST["customer_id"];
 
 
 
-$sql = "insert into customer_address(customer_id,address)values('".$customer_id."','".$address."')";
+$sql = "insert into customer_address(customer_id,address)values('" . $customer_id . "','" . $address . "')";
 $result = $conn->query($sql);
 //echo $sql;
 echo "Address added Successfully";

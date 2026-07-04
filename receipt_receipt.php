@@ -4,21 +4,8 @@ if (!isset($_COOKIE["user_id"])) {
     exit();
 }
 ?>
-<head>
-    <style>
-        @media print {
-            .no-print { display: none !important; }
-        }
-    </style>
-</head>
+<html>
 <body id="content-to-pdf">
-    <div class="no-print" style="background: #e52d27; padding: 10px; display: flex; justify-content: space-between; align-items: center; color: white; font-family: sans-serif;">
-        <div style="font-weight: bold;">PRINT PREVIEW</div>
-        <button type="button" onclick="window.location.href='receipt.php'" 
-            style="background: white; color: #b31217; border: none; padding: 5px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">
-            ← BACK TO RECEIPT LIST
-        </button>
-    </div>
 <?php
 include "db_config.php";
 $trans_id=$_GET["trans_id"];

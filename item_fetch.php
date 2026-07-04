@@ -1,9 +1,5 @@
 <?php
-/**
- * item_fetch.php
- * Returns items grouped parent → sub items.
- * Accepts POST param: status = 'A' (active, default) or 'D' (deleted)
- */
+
 include 'db_config.php';
 header('Content-Type: application/json');
 
@@ -11,7 +7,6 @@ $status = isset($_POST['status']) && $_POST['status'] === 'D' ? 'D' : 'A';
 
 $rows = [];
 
-// ── Parents: items that appear as itemgroup_id in groupassociation ────────────
 $parents = $conn->query(
     "SELECT DISTINCT i.item_id, i.item_name, i.item_description,
             i.cost, i.tax_pc, i.tax_pc_sgst, i.hsn,
@@ -25,7 +20,6 @@ $parents = $conn->query(
      ORDER BY i.item_name"
 );
 
-// ── Standalone items: active, not a sub of anyone, not a parent ───────────────
 $standalones = $conn->query(
     "SELECT i.item_id, i.item_name, i.item_description,
             i.cost, i.tax_pc, i.tax_pc_sgst, i.hsn,
@@ -42,7 +36,6 @@ $standalones = $conn->query(
      ORDER BY i.item_name"
 );
 
-// ── Process parents ───────────────────────────────────────────────────────────
 if ($parents) {
     while ($parent = $parents->fetch_assoc()) {
         $pid = intval($parent['item_id']);
@@ -64,7 +57,6 @@ if ($parents) {
             '_status'           => $parent['status']
         ];
 
-        // Sub items for this parent (always fetch active sub items even in deleted view)
         $subs = $conn->query(
             "SELECT i.item_id, i.item_name, i.item_description,
                     i.cost, i.tax_pc, i.tax_pc_sgst, i.hsn,
@@ -99,7 +91,6 @@ if ($parents) {
     }
 }
 
-// ── Process standalones ───────────────────────────────────────────────────────
 if ($standalones) {
     while ($sa = $standalones->fetch_assoc()) {
         $rows[] = [

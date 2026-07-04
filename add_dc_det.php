@@ -6,13 +6,13 @@ if (!isset($_COOKIE["user_id"])) {
 
 include "db_config.php";
 
-$dc_id       = $_POST["dc_id"] ?? '';
-$trans_id    = $_POST["trans_id"] ?? '';
-$subtrans_id = $_POST["sub_trans_id"] ?? '';
-$item_id     = $_POST["item_id"] ?? '';
+$dc_id       = isset($_POST["dc_id"]) ? mysqli_real_escape_string($conn, $_POST["dc_id"]) : '';
+$trans_id    = isset($_POST["trans_id"]) ? mysqli_real_escape_string($conn, $_POST["trans_id"]) : '';
+$subtrans_id = isset($_POST["sub_trans_id"]) ? mysqli_real_escape_string($conn, $_POST["sub_trans_id"]) : '';
+$item_id     = isset($_POST["item_id"]) ? mysqli_real_escape_string($conn, $_POST["item_id"]) : '';
 $despatched  = (int)($_POST["qty"] ?? 0);
-$vehicle     = $_POST["vehicle"] ?? '';
-$odometer    = $_POST["odometer"] ?? '';
+$vehicle     = isset($_POST["vehicle"]) ? mysqli_real_escape_string($conn, $_POST["vehicle"]) : '';
+$odometer    = isset($_POST["odometer"]) ? mysqli_real_escape_string($conn, $_POST["odometer"]) : '';
 
 $conn->begin_transaction();
 
@@ -42,7 +42,7 @@ try {
         throw new Exception("Cannot deliver more than pending qty");
     }
 
-    // Check Inventory
+    /* Check Inventory
     $sql_inv = "
     SELECT qty
     FROM inventory_block
@@ -69,7 +69,7 @@ try {
 
         $conn->query($sql_upd);
     }
-
+    */
     // Insert Delivery Challan Detail
     $sql = "
     INSERT INTO delivery_challan_det

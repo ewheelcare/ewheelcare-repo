@@ -27,15 +27,19 @@ $customer_mobile = isset($_POST["customer_mobile"]) ? $_POST["customer_mobile"] 
 // if ($result && $row = $result->fetch_assoc()) {
 //     $tradc_idns_id = $row["dc_id"];
 // }
-$trans_id = isset($_POST["trans_id"]) ? $_POST["trans_id"] : '';
-$vehicle     = $_POST["vehicle"] ?? '';
-$odometer    = $_POST["odometer"] ?? '';
+$trans_id = isset($_POST["trans_id"]) ? mysqli_real_escape_string($conn, $_POST["trans_id"]) : '';
+$vehicle = isset($_POST["vehicle"]) ? mysqli_real_escape_string($conn, $_POST["vehicle"]) : '';
+$odometer = isset($_POST["odometer"]) ? mysqli_real_escape_string($conn, $_POST["odometer"]) : '';
+
+$customer = mysqli_real_escape_string($conn, $customer);
+$company_name = mysqli_real_escape_string($conn, $company_name);
+$customer_name = mysqli_real_escape_string($conn, $customer_name);
+$customer_mobile = mysqli_real_escape_string($conn, $customer_mobile);
+$trans_date = mysqli_real_escape_string($conn, $trans_date);
 
 // Prepare insert statement
 $sql = "INSERT INTO delivery_challan (
     customer, dc_date, active_status, company_name, customer_name,customer_mobile,trans_id,vehicle,odometer) VALUES ('".$customer."', STR_TO_DATE('".$trans_date."', '%d-%m-%Y'), 'A', '".$company_name."', '".$customer_name."','".$customer_mobile."','".$trans_id."','".$vehicle."','".$odometer."')";
-//echo $sql;
-//  $conn->query($sql);
 
 // Execute and check result
     // echo $trans_id;

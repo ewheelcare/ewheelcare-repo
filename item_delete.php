@@ -1,9 +1,5 @@
 <?php
-/**
- * item_delete.php
- * Soft-deletes a parent item and all its linked sub items.
- * Sets status = 'D' on item table. Does NOT touch groupassociation.
- */
+
 include 'db_config.php';
 
 $item_id = isset($_POST['item_id']) ? intval($_POST['item_id']) : 0;

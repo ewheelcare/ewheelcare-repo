@@ -136,28 +136,31 @@
                                 <table class="table table-hover mb-0" id="dataTable" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
-                                            <th style="width:50%">Item Name</th>
+                                            <th style="width:5%">Item Id</th>
+                                            <th style="width:45%">Item Name</th>
                                             <th style="width:20%;text-align:center">Warehouse Stock</th>
                                             <th style="width:30%">Transfer to Shop</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                     <?php
-                                    $sql = "SELECT SUM(inv.qty) as total_qty, it.ITEM_NAME 
+                                    $sql = "SELECT SUM(inv.qty) as total_qty, it.ITEM_NAME ,it.item_id
                                             FROM inventory inv 
                                             JOIN item it ON inv.item_id = it.ITEM_ID
-                                            GROUP BY it.ITEM_NAME
+                                            GROUP BY it.ITEM_NAME,it.ITEM_ID
                                             HAVING total_qty > 0
                                             ORDER BY it.ITEM_NAME";
                                     $result = $conn->query($sql);
                                     $row_count = 0;
                                     while ($row = $result->fetch_assoc()) {
                                         $item_name = $row["ITEM_NAME"];
+                                        $item_id = $row["item_id"];
                                         $qty = $row["total_qty"];
                                         $safe_id = "item_" . $row_count++;
                                         $badge_class = $qty >= 10 ? 'stock-high' : ($qty >= 3 ? 'stock-low' : 'stock-zero');
                                     ?>
                                         <tr>
+                                            <td class="item-name-cell"><?php echo $item_id; ?></td>
                                             <td class="item-name-cell"><?php echo htmlspecialchars($item_name); ?></td>
                                             <td style="text-align:center">
                                                 <span class="stock-badge <?php echo $badge_class; ?>"><?php echo number_format($qty, 0); ?></span>
@@ -171,12 +174,25 @@
                                                         </button>
                                                         <div class="dropdown-menu">
                                                             <a class="dropdown-item" href="javascript:void(0)"
-                                                               onclick="transferStockByName('<?php echo addslashes($item_name); ?>', '<?php echo $safe_id; ?>', '1000002', 'Sirasapalli')">
-                                                               <i class="fas fa-store mr-1"></i> Sirasapalli Shop
+                                                        onclick="transferStockByName(
+                                                        '<?php echo $item_id; ?>',
+                                                        '<?php echo $safe_id; ?>',
+                                                        '1000002',
+                                                        'Sirasapalli'
+                                                        )">    
+
+                                                        <i class="fas fa-store mr-1"></i> 
+                                                            Sirasapalli Shop
                                                             </a>
                                                             <a class="dropdown-item" href="javascript:void(0)"
-                                                               onclick="transferStockByName('<?php echo addslashes($item_name); ?>', '<?php echo $safe_id; ?>', '1000003', 'Gajuwaka')">
-                                                               <i class="fas fa-store mr-1"></i> Gajuwaka Shop
+                                                            onclick="transferStockByName(
+                                                            '<?php echo $item_id; ?>',
+                                                            '<?php echo $safe_id; ?>',
+                                                            '1000003',
+                                                            'Gajuwaka'
+                                                            )">
+                                                               <i class="fas fa-store mr-1"></i> 
+                                                               Gajuwaka Shop
                                                             </a>
                                                         </div>
                                                     </div>
@@ -205,33 +221,185 @@
     <script src="js/demo/datatables-demo.js"></script>
 
     <script>
-        function transferStockByName(itemName, elementId, toShopId, shopName) {
-            let qtyInput = document.getElementById("qty_" + elementId);
-            let qty = parseFloat(qtyInput.value);
-            let maxQty = parseFloat(qtyInput.getAttribute("max"));
 
-            if (!qty || qty <= 0 || isNaN(qty)) {
-                alert("Please enter a valid quantity.");
-                qtyInput.focus();
-                return;
+        function transferStockByName(
+    itemid,
+    elementId,
+    toShopId,
+    ShopName
+) {
+
+    // =========================================
+    // GET QUANTITY INPUT
+    // =========================================
+    
+    let qtyInput = document.getElementById(
+        "qty_" + elementId
+    );
+
+    let qty = parseFloat(qtyInput.value);
+
+    let maxQty = parseFloat(
+        qtyInput.getAttribute("max")
+    );
+
+    // =========================================
+    // VALIDATION
+    // =========================================
+    if (!qty || qty <= 0 || isNaN(qty)) {
+
+        alert("Please enter valid quantity");
+
+        qtyInput.focus();
+
+        return;
+    }
+
+    if (qty > maxQty) {
+
+        alert(
+            "Cannot transfer " +
+            qty +
+            ". Available stock is only " +
+            maxQty
+        );
+
+        qtyInput.focus();
+
+        return;
+    }
+
+    // =========================================
+    // CONFIRMATION
+    // =========================================
+    let confirmTransfer = confirm(
+        "Transfer " +
+        qty +
+        " × [" +
+        itemid +
+        "] to " +
+        ShopName +
+        " shop ?"
+    );
+
+    if (!confirmTransfer) {
+        return;
+    }
+
+    // =========================================
+    // DISABLE INPUT DURING REQUEST
+    // =========================================
+    qtyInput.disabled = true;
+
+    // =========================================
+    // AJAX CALL
+    // =========================================
+    $.ajax({
+
+        url: "draw_deposit.php",
+
+        type: "POST",
+
+        dataType: "json",
+
+        data: {
+
+            from_shop: "WAREHOUSE",
+
+            from_qty: qty,
+
+            to_shop: toShopId,
+
+            item_id: itemid,
+
+            Shop_Name:ShopName
+        },
+
+        // =====================================
+        // BEFORE SEND
+        // =====================================
+        beforeSend: function () {
+
+            console.log(
+                "Starting transfer..."
+            );
+        },
+
+        // =====================================
+        // SUCCESS RESPONSE
+        // =====================================
+        success: function (response) {
+
+            console.log(response);
+
+            /*
+            Expected JSON:
+
+            {
+                "success": true,
+                "message": "Transfer successful",
+                "trans_id": "TRN123"
             }
-            if (qty > maxQty) {
-                alert("Cannot transfer " + qty + " — only " + maxQty + " available in Warehouse.");
-                return;
+            */
+
+            if (response.success === true) {
+
+                let msg =
+                    "✅ " +
+                    response.message;
+
+                // optional trans id
+                if (response.trans_id) {
+
+                    msg +=
+                        "\nTransaction ID : " +
+                        response.trans_id;
+                }
+
+                alert(msg);
+
+                // reload page
+                location.reload();
+
+            } else {
+
+                alert(
+                    "⚠️ " +
+                    response.message
+                );
+
+                qtyInput.disabled = false;
             }
-            if (confirm("Transfer " + qty + " × [" + itemName + "] → " + shopName + " Shop?")) {
-                $.post("draw_deposit.php", {
-                    from_shop: "WAREHOUSE",
-                    from_qty: qty,
-                    to_shop: toShopId,
-                    item_name: itemName
-                }, function(data) {
-                    let msg = $.trim(data);
-                    alert(msg.toLowerCase().includes("successful") ? "✅ " + msg : "⚠️ " + msg);
-                    location.reload();
-                });
-            }
+        },
+
+        // =====================================
+        // AJAX ERROR
+        // =====================================
+        error: function (
+            xhr,
+            status,
+            error
+        ) {
+
+            console.log(
+                "AJAX ERROR"
+            );
+
+            console.log(xhr);
+
+            console.log(
+                xhr.responseText
+            );
+
+            alert(
+                "Server Error : " +
+                error
+            );
+
+            qtyInput.disabled = false;
         }
+    });
+}
     </script>
 
 </body>
