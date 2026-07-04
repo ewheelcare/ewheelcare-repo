@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Sales Receipt</title>
@@ -19,7 +20,7 @@
         .receipt-container {
             max-width: 850px;
             margin: 0 auto;
-            border: 1px solid #000;
+            border: 2px solid #000;
             padding: 0;
             background: #fff;
         }
@@ -62,7 +63,8 @@
         }
 
         .header-details .address-text {
-            color: #003366; /* Dark blue for address like in screenshot */
+            color: #003366;
+            /* Dark blue for address like in screenshot */
         }
 
         .invoice-type-banner {
@@ -133,6 +135,16 @@
             border: 1px solid #000;
             padding: 6px 5px;
             vertical-align: top;
+        }
+
+        .items-table th:first-child,
+        .items-table td:first-child {
+            border-left: none;
+        }
+
+        .items-table th:last-child,
+        .items-table td:last-child {
+            border-right: none;
         }
 
         .text-right {
@@ -209,7 +221,7 @@
             }
 
             .receipt-container {
-                border: 1px solid #000;
+                border: 2px solid #000;
             }
 
             .no-print {
@@ -241,7 +253,8 @@
     <?php
     function numberToWords($number)
     {
-        if ($number == 0) return "Zero";
+        if ($number == 0)
+            return "Zero";
         $words = array(0 => '', 1 => 'One', 2 => 'Two', 3 => 'Three', 4 => 'Four', 5 => 'Five', 6 => 'Six', 7 => 'Seven', 8 => 'Eight', 9 => 'Nine', 10 => 'Ten', 11 => 'Eleven', 12 => 'Twelve', 13 => 'Thirteen', 14 => 'Fourteen', 15 => 'Fifteen', 16 => 'Sixteen', 17 => 'Seventeen', 18 => 'Eighteen', 19 => 'Nineteen', 20 => 'Twenty', 30 => 'Thirty', 40 => 'Forty', 50 => 'Fifty', 60 => 'Sixty', 70 => 'Seventy', 80 => 'Eighty', 90 => 'Ninety');
         $levels = array(10000000 => 'Crore', 100000 => 'Lakh', 1000 => 'Thousand', 100 => 'Hundred');
         $result = '';
@@ -253,10 +266,12 @@
             }
         }
         if ($number > 0) {
-            if ($number < 20) $result .= $words[$number];
+            if ($number < 20)
+                $result .= $words[$number];
             else {
                 $result .= $words[floor($number / 10) * 10];
-                if ($number % 10) $result .= ' ' . $words[$number % 10];
+                if ($number % 10)
+                    $result .= ' ' . $words[$number % 10];
             }
         }
         return trim($result);
@@ -273,7 +288,7 @@
 
     $sql_s = "SELECT * FROM shop WHERE shop_id='$shop_id'";
     $res_s = $conn->query($sql_s);
-    if($res_s->num_rows > 0) {
+    if ($res_s->num_rows > 0) {
         $shop = $res_s->fetch_assoc();
         $print_address = !empty($shop["address"]) ? $shop["address"] : $company["company_address"];
     } else {
@@ -300,8 +315,8 @@
                 <div class="address-text">
                     <?php echo $print_address; ?>
                 </div>
-                <?php if(!empty($company["company_gst"])) { ?>
-                <div style="color: #003366; margin-top: 5px;">GSTIN : <?php echo $company["company_gst"]; ?></div>
+                <?php if (!empty($company["company_gst"])) { ?>
+                    <div style="color: #003366; margin-top: 5px;">GSTIN : <?php echo $company["company_gst"]; ?></div>
                 <?php } ?>
                 <div style="margin-top: 2px;">&#9742; <?php echo $company["company_mobile"]; ?></div>
             </div>
@@ -313,19 +328,24 @@
                 <div class="section-title">CUSTOMER DETAILS</div>
                 <div class="info-row">
                     <div class="info-label">COMPANY:</div>
-                    <div class="info-value"><?php echo $row_m["COMPANY_NAME"] ? $row_m["COMPANY_NAME"] : "NA - Not Provided"; ?></div>
+                    <div class="info-value">
+                        <?php echo $row_m["COMPANY_NAME"] ? $row_m["COMPANY_NAME"] : "NA - Not Provided"; ?></div>
                 </div>
                 <div class="info-row">
                     <div class="info-label">OWNER:</div>
-                    <div class="info-value"><?php echo $row_m["CUSTOMER_NAME"] ? $row_m["CUSTOMER_NAME"] : "NA - Not Provided"; ?></div>
+                    <div class="info-value">
+                        <?php echo $row_m["CUSTOMER_NAME"] ? $row_m["CUSTOMER_NAME"] : "NA - Not Provided"; ?></div>
                 </div>
                 <div class="info-row">
                     <div class="info-label">MOBILE:</div>
-                    <div class="info-value"><?php echo $row_m["customer_mobile"] ? $row_m["customer_mobile"] : "NA - Not Provided"; ?></div>
+                    <div class="info-value">
+                        <?php echo $row_m["customer_mobile"] ? $row_m["customer_mobile"] : "NA - Not Provided"; ?></div>
                 </div>
                 <div class="info-row">
                     <div class="info-label">ADDRESS:</div>
-                    <div class="info-value"><?php echo $row_m["CUSTOMER_ADDRESS"] ? $row_m["CUSTOMER_ADDRESS"] : "NA - Not Provided"; ?></div>
+                    <div class="info-value">
+                        <?php echo $row_m["CUSTOMER_ADDRESS"] ? $row_m["CUSTOMER_ADDRESS"] : "NA - Not Provided"; ?>
+                    </div>
                 </div>
                 <?php if ($gst_type == "Y" && !empty($row_m["CUSTOMER_GST"])) { ?>
                     <div class="info-row">
@@ -338,7 +358,7 @@
                 <div class="section-title">INVOICE INFO</div>
                 <div class="info-row">
                     <div class="info-label">INVOICE NO:</div>
-                    <div class="info-value"><strong><?php echo $row_m["year_part"].$row_m["trans_id"]; ?></strong></div>
+                    <div class="info-value"><strong><?php echo $row_m["year_part"] . $row_m["trans_id"]; ?></strong></div>
                 </div>
                 <div class="info-row">
                     <div class="info-label">DATE:</div>
@@ -417,17 +437,22 @@
                         <td class="text-right"><?php echo number_format($gross, 2); ?></td>
                         <?php if ($gst_type == "Y") { ?>
                             <td class="text-right">
-                            <?php 
-                                echo number_format($tax, 2); 
-                            ?>
+                                <?php
+                                echo number_format($tax, 2);
+                                ?>
                             </td>
                         <?php } ?>
-                        <td class="text-right"><strong><?php echo number_format($line_total, 2); ?></strong></td>
+                        <td class="text-right"><?php echo number_format($line_total, 2); ?></td>
                     </tr>
                 <?php } ?>
                 <tr>
-                    <td colspan="<?php echo ($gst_type == 'Y') ? '7' : '6'; ?>" class="text-right" style="font-weight: bold;">TOTAL INVOICE VALUE</td>
-                    <td class="text-right" style="font-weight: bold;"><?php echo number_format($grand_total, 2); ?></td>
+                    <td colspan="5" class="text-right"
+                        style="font-weight: bold; border-top: 2px solid #000;">SUB-TOTAL</td>
+                    <td class="text-right" style="font-weight: bold; border-top: 2px solid #000;"><?php echo number_format($total_gross, 2); ?></td>
+                    <?php if ($gst_type == 'Y') { ?>
+                        <td class="text-right" style="font-weight: bold; border-top: 2px solid #000;"><?php echo number_format($total_tax, 2); ?></td>
+                    <?php } ?>
+                    <td class="text-right" style="font-weight: bold; border-top: 2px solid #000;"><?php echo number_format($grand_total, 2); ?></td>
                 </tr>
                 <?php
                 $discount = isset($row_m["discount"]) ? floatval($row_m["discount"]) : 0;
@@ -435,16 +460,20 @@
                 $final_amount = $grand_total - $discount + $roundoff;
                 ?>
                 <tr>
-                    <td colspan="<?php echo ($gst_type == 'Y') ? '7' : '6'; ?>" class="text-right" style="font-weight: bold;">DISCOUNT</td>
+                    <td colspan="<?php echo ($gst_type == 'Y') ? '7' : '6'; ?>" class="text-right"
+                        style="font-weight: bold;">DISCOUNT</td>
                     <td class="text-right" style="font-weight: bold;"><?php echo number_format($discount, 2); ?></td>
                 </tr>
                 <tr>
-                    <td colspan="<?php echo ($gst_type == 'Y') ? '7' : '6'; ?>" class="text-right" style="font-weight: bold;">ROUND OFF</td>
+                    <td colspan="<?php echo ($gst_type == 'Y') ? '7' : '6'; ?>" class="text-right"
+                        style="font-weight: bold;">ROUND OFF</td>
                     <td class="text-right" style="font-weight: bold;"><?php echo number_format($roundoff, 2); ?></td>
                 </tr>
                 <tr>
-                    <td colspan="<?php echo ($gst_type == 'Y') ? '7' : '6'; ?>" class="text-right" style="font-weight: bold;">TOTAL INVOICE VALUE (R/OFF)</td>
-                    <td class="text-right" style="font-weight: bold;"><?php echo number_format($final_amount, 2); ?></td>
+                    <td colspan="<?php echo ($gst_type == 'Y') ? '7' : '6'; ?>" class="text-right"
+                        style="font-weight: bold; border-bottom: 2px solid #000;">TOTAL INVOICE VALUE</td>
+                    <td class="text-right" style="font-weight: bold; border-bottom: 2px solid #000;"><?php echo number_format($final_amount, 2); ?>
+                    </td>
                 </tr>
             </tbody>
         </table>
@@ -453,7 +482,7 @@
             TOTAL AMOUNT IN WORDS: INR. <?php echo numberToWords($final_amount); ?> ONLY
         </div>
 
-        <?php if($gst_type == "Y") { ?>
+        <?php if ($gst_type == "Y") { ?>
             <!-- GST Summary Table -->
             <table class="items-table" style="margin-top: 5px; font-size: 10px;">
                 <thead>
@@ -470,14 +499,14 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <?php 
+                    <?php
                     $res_d->data_seek(0);
                     $tax_amount_sgst = 0;
                     $tax_amount_cgst = 0;
                     $tax_amount_igst = 0;
                     $total_taxable = 0;
                     $total_all_tax = 0;
-                    
+
                     $hsn_summary = [];
 
                     while ($row = $res_d->fetch_assoc()) {
@@ -493,7 +522,7 @@
                         $hsn = empty($row["hsn"]) ? "N/A" : $row["hsn"];
                         $key = $hsn . "_" . $row["tax"] . "_" . $row["tax_sgst"] . "_" . $row["tax_igst"];
 
-                        if(!isset($hsn_summary[$key])) {
+                        if (!isset($hsn_summary[$key])) {
                             $hsn_summary[$key] = [
                                 "hsn" => $hsn,
                                 "price" => 0,
@@ -523,16 +552,27 @@
                         <tr>
                             <td class="text-center"><?php echo $summary_row["hsn"]; ?></td>
                             <td class="text-right"><?php echo number_format($summary_row["price"], 2); ?></td>
-                            
-                            <td class="text-center"><?php echo ($summary_row["tax"] > 0) ? floatval($summary_row["tax"]) . "%" : "-"; ?></td>
-                            <td class="text-right"><?php echo ($summary_row["tax_amount"] > 0) ? number_format($summary_row["tax_amount"], 2) : "-"; ?></td>
-                            
-                            <td class="text-center"><?php echo ($summary_row["tax_sgst"] > 0) ? floatval($summary_row["tax_sgst"]) . "%" : "-"; ?></td>
-                            <td class="text-right"><?php echo ($summary_row["tax_amount_sgst"] > 0) ? number_format($summary_row["tax_amount_sgst"], 2) : "-"; ?></td>
-                            
-                            <td class="text-center"><?php echo ($summary_row["tax_igst"] > 0) ? floatval($summary_row["tax_igst"]) . "%" : "-"; ?></td>
-                            <td class="text-right"><?php echo ($summary_row["tax_amount_igst"] > 0) ? number_format($summary_row["tax_amount_igst"], 2) : "-"; ?></td>
-                            
+
+                            <td class="text-center">
+                                <?php echo ($summary_row["tax"] > 0) ? floatval($summary_row["tax"]) . "%" : "-"; ?></td>
+                            <td class="text-right">
+                                <?php echo ($summary_row["tax_amount"] > 0) ? number_format($summary_row["tax_amount"], 2) : "-"; ?>
+                            </td>
+
+                            <td class="text-center">
+                                <?php echo ($summary_row["tax_sgst"] > 0) ? floatval($summary_row["tax_sgst"]) . "%" : "-"; ?>
+                            </td>
+                            <td class="text-right">
+                                <?php echo ($summary_row["tax_amount_sgst"] > 0) ? number_format($summary_row["tax_amount_sgst"], 2) : "-"; ?>
+                            </td>
+
+                            <td class="text-center">
+                                <?php echo ($summary_row["tax_igst"] > 0) ? floatval($summary_row["tax_igst"]) . "%" : "-"; ?>
+                            </td>
+                            <td class="text-right">
+                                <?php echo ($summary_row["tax_amount_igst"] > 0) ? number_format($summary_row["tax_amount_igst"], 2) : "-"; ?>
+                            </td>
+
                             <td class="text-right"><strong><?php echo number_format($row_total_tax, 2); ?></strong></td>
                         </tr>
                     <?php } ?>
@@ -540,11 +580,17 @@
                         <td class="text-center"><strong>Total</strong></td>
                         <td class="text-right"><strong><?php echo number_format($total_taxable, 2); ?></strong></td>
                         <td class="text-right"></td>
-                        <td class="text-right"><strong><?php echo ($tax_amount_cgst > 0) ? number_format($tax_amount_cgst, 2) : "-"; ?></strong></td>
+                        <td class="text-right">
+                            <strong><?php echo ($tax_amount_cgst > 0) ? number_format($tax_amount_cgst, 2) : "-"; ?></strong>
+                        </td>
                         <td class="text-right"></td>
-                        <td class="text-right"><strong><?php echo ($tax_amount_sgst > 0) ? number_format($tax_amount_sgst, 2) : "-"; ?></strong></td>
+                        <td class="text-right">
+                            <strong><?php echo ($tax_amount_sgst > 0) ? number_format($tax_amount_sgst, 2) : "-"; ?></strong>
+                        </td>
                         <td class="text-right"></td>
-                        <td class="text-right"><strong><?php echo ($tax_amount_igst > 0) ? number_format($tax_amount_igst, 2) : "-"; ?></strong></td>
+                        <td class="text-right">
+                            <strong><?php echo ($tax_amount_igst > 0) ? number_format($tax_amount_igst, 2) : "-"; ?></strong>
+                        </td>
                         <td class="text-right"><strong><?php echo number_format($total_all_tax, 2); ?></strong></td>
                     </tr>
                 </tbody>
@@ -612,4 +658,5 @@
         });
     </script>
 </body>
+
 </html>

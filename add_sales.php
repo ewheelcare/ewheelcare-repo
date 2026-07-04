@@ -69,6 +69,13 @@ try {
         throw new Exception("Transaction Date is required.");
     }
 
+    if (empty($company_name)) {
+        throw new Exception("Company Name is required.");
+    }
+
+    if (empty($customer_name)) {
+        throw new Exception("Customer Name is required.");
+    }
 
     if (empty($customer_mobile)) {
         throw new Exception("Customer Mobile is required.");
@@ -76,8 +83,7 @@ try {
 
     /* ==========================
        CUSTOMER CHECK
-       ========================== */
-
+    */
     $stmt = $conn->prepare("
         SELECT customer_id
         FROM customer
@@ -102,10 +108,8 @@ try {
 
     } else {
 
-        /* ==========================
-           CREATE CUSTOMER
-           ========================== */
-
+            
+        
         $stmt = $conn->prepare("
             INSERT INTO customer
             (
@@ -130,7 +134,7 @@ try {
 
         $customer = $conn->insert_id;
 
-        /* GST */
+     
 
         $stmt = $conn->prepare("
             INSERT INTO customer_gst
@@ -152,7 +156,7 @@ try {
 
         $stmt->execute();
 
-        /* ADDRESS */
+        
 
         $stmt = $conn->prepare("
             INSERT INTO customer_address
@@ -174,6 +178,7 @@ try {
 
         $stmt->execute();
     }
+     
 
     /* ==========================
        INVOICE NUMBER GENERATION

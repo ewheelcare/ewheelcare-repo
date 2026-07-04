@@ -121,11 +121,13 @@ LEFT JOIN (
         LEFT JOIN (
             SELECT 
                 pt.payment_id,
-                SUM(CASE WHEN pt.mode = 'service' THEN COALESCE(CAST(NULLIF(pt.amount_settled, '') AS DECIMAL(10,2)), 0) ELSE 0 END) AS service_amount,
-                SUM(CASE WHEN pt.mode IN ('service', 'sales') THEN COALESCE(CAST(NULLIF(pt.amount_settled, '') AS DECIMAL(10,2)), 0) ELSE 0 END) AS total_settled
+                COALESCE(st.shop,NULL) AS shop_id,
+                SUM(CASE WHEN pt.mode = 'service' THEN pt.amount_settled ELSE 0 END) AS service_amount,
+                SUM(CASE WHEN pt.mode IN ('service') THEN pt.amount_settled ELSE 0 END) AS total_settled
             FROM pay_track pt
-            GROUP BY pt.payment_id
-        ) pt ON (pay.payment_id = pt.payment_id)
+            LEFT JOIN service_trans st ON (pt.trans_id = st.trans_id AND pt.mode = 'service')
+             GROUP BY pt.payment_id, shop_id
+        ) pt ON (pay.payment_id = pt.payment_id AND UPPER(pay.shop_id) = UPPER(pt.shop_id))
         WHERE pay.payment_date < STR_TO_DATE('$from_date','%d-%m-%Y') 
           AND pay.active_status = 'A' 
           AND pay.nature = 'CREDIT'
@@ -157,11 +159,13 @@ LEFT JOIN (
         LEFT JOIN (
             SELECT 
                 pt.payment_id,
-                SUM(CASE WHEN pt.mode = 'service' THEN COALESCE(CAST(NULLIF(pt.amount_settled, '') AS DECIMAL(10,2)), 0) ELSE 0 END) AS service_amount,
-                SUM(CASE WHEN pt.mode IN ('service', 'sales') THEN COALESCE(CAST(NULLIF(pt.amount_settled, '') AS DECIMAL(10,2)), 0) ELSE 0 END) AS total_settled
+                COALESCE(st.shop, NULL) AS shop_id,
+                SUM(CASE WHEN pt.mode = 'service' THEN pt.amount_settled ELSE 0 END) AS service_amount,
+                SUM(CASE WHEN pt.mode IN ('service') THEN pt.amount_settled ELSE 0 END) AS total_settled
             FROM pay_track pt
-            GROUP BY pt.payment_id
-        ) pt ON (pay.payment_id = pt.payment_id)
+            LEFT JOIN service_trans st ON (pt.trans_id = st.trans_id AND pt.mode = 'service')
+            GROUP BY pt.payment_id, shop_id
+        ) pt ON (pay.payment_id = pt.payment_id AND UPPER(pay.shop_id) = UPPER(pt.shop_id))
     ) pay
     JOIN shop s_sub ON (pay.shop_id = s_sub.shop_id OR pay.shop_id = UPPER(SUBSTRING_INDEX(s_sub.shop_name, ' ', 1)))
     WHERE pay.payment_date BETWEEN STR_TO_DATE('$from_date','%d-%m-%Y') AND STR_TO_DATE('$to_date','%d-%m-%Y') AND pay.active_status = 'A' AND pay.nature = 'CREDIT'
@@ -308,11 +312,13 @@ ORDER BY sh.shop_name;
                                       LEFT JOIN (
                                           SELECT 
                                               pt.payment_id,
-                                              SUM(CASE WHEN pt.mode = 'service' THEN COALESCE(CAST(NULLIF(pt.amount_settled, '') AS DECIMAL(10,2)), 0) ELSE 0 END) AS service_amount,
-                                              SUM(CASE WHEN pt.mode IN ('service', 'sales') THEN COALESCE(CAST(NULLIF(pt.amount_settled, '') AS DECIMAL(10,2)), 0) ELSE 0 END) AS total_settled
+                                              COALESCE(st.shop,NULL) AS shop_id,
+                                              SUM(CASE WHEN pt.mode = 'service' THEN pt.amount_settled ELSE 0 END) AS service_amount,
+                                              SUM(CASE WHEN pt.mode IN ('service') THEN pt.amount_settled ELSE 0 END) AS total_settled
                                           FROM pay_track pt
-                                          GROUP BY pt.payment_id
-                                      ) pt ON (pay.payment_id = pt.payment_id)
+                                          LEFT JOIN service_trans st ON (pt.trans_id = st.trans_id AND pt.mode = 'service')
+                                          GROUP BY pt.payment_id, shop_id
+                                      ) pt ON (pay.payment_id = pt.payment_id AND UPPER(pay.shop_id) = UPPER(pt.shop_id))
                                       WHERE pay.payment_date BETWEEN STR_TO_DATE('$from_date','%d-%m-%Y') 
                                         AND STR_TO_DATE('$to_date','%d-%m-%Y') 
                                         AND pay.active_status = 'A'

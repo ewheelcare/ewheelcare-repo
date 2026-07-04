@@ -691,7 +691,7 @@ t.subtrans_id";
                                             <tr>
                                                 <td
                                                     style="font-weight: bold; font-size: 0.95em; vertical-align: middle; color: #222;">
-                                                    TOTAL INVOICE VALUE</td>
+                                                    SUB-TOTAL</td>
                                                 <td class="text-right"
                                                     style="background-color: #fff; vertical-align: middle;">
                                                     <input id="trans_amount" class="form-control text-right" readonly
@@ -725,15 +725,15 @@ t.subtrans_id";
                                                         style="font-weight: bold; color: #333;">
                                                 </td>
                                             </tr>
-                                            <tr>
+                                            <tr style="background-color: #fff3cd !important; border: 2px solid #ffeeba !important;">
                                                 <td
-                                                    style="font-weight: bold; font-size: 0.95em; vertical-align: middle; color: #222;">
-                                                    TOTAL INVOICE VALUE (R/OFF)</td>
+                                                    style="font-weight: 900; font-size: 1.2em; vertical-align: middle; padding: 10px; color: #856404 !important;">
+                                                    TOTAL INVOICE VALUE</td>
                                                 <td class="text-right"
-                                                    style="background-color: #fff; vertical-align: middle;">
+                                                    style="vertical-align: middle; padding: 10px; background-color: transparent;">
                                                     <input id="final_amount" class="form-control text-right" readonly
                                                         value="<?php echo number_format((float) ($grand_total - $discount_amount + $roundoff_amount), 2, '.', ''); ?>"
-                                                        style="border:none; background:transparent; text-align:right; font-weight: bold; padding: 0; margin: 0; color: #222; height: auto;">
+                                                        style="border:none; background:transparent; text-align:right; font-weight: 900; font-size: 1.4em; padding: 0; margin: 0; color: #d32f2f !important; height: auto;">
                                                 </td>
                                             </tr>
                                         </tbody>
@@ -759,6 +759,9 @@ t.subtrans_id";
                                 <hr>
                                 <center>
                                     <button class="btn btn-success" onclick="save_dummy()">Save</button>
+                                    <?php if ($trans_id != "" && intval($ver) > 0) { ?>
+                                        <button class="btn btn-secondary" onclick="cancel_edit()">Cancel Edit</button>
+                                    <?php } ?>
                                 </center>
                                 <hr>
 
@@ -1051,9 +1054,49 @@ t.subtrans_id";
         };
 
         var del_mode = 0;
+        var is_submitting = false; // Added to track when user is saving
         var addModal = new bootstrap.Modal(document.getElementById('addModal'));
         var editModal = new bootstrap.Modal(document.getElementById('editModal'));
         var createCustomerModal = new bootstrap.Modal(document.getElementById('createCustomerModal'));
+
+        // Prevent accidental exit without saving
+        window.addEventListener('beforeunload', function (e) {
+            let active_status = "<?php echo $active_status; ?>";
+            let current_trans_id = $("#trans_id").val();
+            
+            // Warn if the invoice is unlocked/unsaved ('A' means saved) and a trans_id exists
+            if (!is_submitting && active_status !== 'A' && current_trans_id !== "") {
+                e.preventDefault();
+                e.returnValue = 'You have unsaved changes. If you leave without saving, this invoice may be lost or deleted. Are you sure you want to leave?';
+            }
+        });
+
+        // Automatically revert if the user leaves the page or clicks 'Leave' on the dialog
+        window.addEventListener('unload', function (e) {
+            let active_status = "<?php echo $active_status; ?>";
+            let current_trans_id = $("#trans_id").val();
+            let ver = parseInt("<?php echo $ver; ?>");
+            
+            // If they are abandoning an edit of an existing invoice (ver > 0)
+            if (!is_submitting && active_status !== 'A' && current_trans_id !== "" && ver > 0) {
+                let data = new FormData();
+                data.append('trans_id', current_trans_id);
+                data.append('ver', ver);
+                navigator.sendBeacon('cancel_edit_sales.php', data);
+            }
+        });
+
+        function cancel_edit() {
+            if (confirm("Are you sure you want to cancel your edits and revert to the previously saved version?")) {
+                is_submitting = true; // Prevent unload beacon since we handle it here
+                $.post("cancel_edit_sales.php", {
+                    trans_id: $("#trans_id").val(),
+                    ver: "<?php echo $ver; ?>"
+                }, function(data) {
+                    window.location.href = "sales_trans_new.php?trans_id=" + $("#trans_id").val();
+                });
+            }
+        }
 
         // Privilege flags (set server-side, used client-side as safety net)
         var CAN_CREATE_CUSTOMER = <?php echo has_priv('CREATE_CUSTOMER') ? 'true' : 'false'; ?>;
@@ -1617,6 +1660,7 @@ t.subtrans_id";
                 },
                 function (data, status) {
                     console.log(data);
+                    is_submitting = true; // Prevent unsaved warning on reload
                     location.reload();
                 });
         });
@@ -2158,6 +2202,7 @@ t.subtrans_id";
                 function (data, status) {
                     console.log(data);
                     alert("Saved Transaction Successfully");
+                    is_submitting = true; // Avoid beforeunload prompt when saving
                     location.href = "sales_trans_new.php?trans_id=" + $("#trans_id").val();
                     $("#add_opener").prop("disabled", false);
 

@@ -103,19 +103,11 @@ if (!isset($_COOKIE["user_id"])) {
                                         <tr style="background:#343a40; color:white; font-weight:bold; font-size:11px;">
                                             <th style="padding:3px;" rowspan="2">Shop</th>
                                             <?php foreach ($serv_array as $sid) { ?>
-                                                <th style="padding:3px;text-align:center;" colspan="2">
+                                                <th style="padding:3px;text-align:center;">
                                                     <?= $serv_names[$sid] ?>
                                                 </th>
                                             <?php } ?>
-                                            <th style="padding:3px;text-align:center;" colspan="2">TOTAL</th>
-                                        </tr>
-                                        <tr style="background:#343a40; color:white; font-weight:bold; font-size:11px;">
-                                            <?php foreach ($serv_array as $sid) { ?>
-                                                <th style="padding:3px;">Qty</th>
-                                                <th style="padding:3px;">Amount</th>
-                                            <?php } ?>
-                                            <th style="padding:3px;">Qty</th>
-                                            <th style="padding:3px;">Amount</th>
+                                            <th style="padding:3px;text-align:center;">TOTAL</th>
                                         </tr>
                                     </thead>
 
@@ -128,11 +120,9 @@ if (!isset($_COOKIE["user_id"])) {
 
                                         foreach ($serv_array as $sid) {
                                             $sql .= ", SUM(CASE WHEN d.service_id='$sid' THEN (d.total + IFNULL(d.tax_amount, 0) + IFNULL(d.tax_amount_sgst, 0)) ELSE 0 END) AS s_$sid";
-                                            $sql .= ", SUM(CASE WHEN d.service_id='$sid' THEN IFNULL(d.qty, 0) ELSE 0 END) AS q_$sid";
                                         }
 
-                                        $sql .= ", SUM(d.total + IFNULL(d.tax_amount, 0) + IFNULL(d.tax_amount_sgst, 0)) as grand_total";
-                                        $sql .= ", SUM(IFNULL(d.qty, 0)) as grand_qty
+                                        $sql .= ", SUM(d.total + IFNULL(d.tax_amount, 0) + IFNULL(d.tax_amount_sgst, 0)) as grand_total
 FROM service_trans t
 JOIN service_trans_det d ON t.trans_id=d.trans_id
 WHERE t.active_status='A'
@@ -164,11 +154,9 @@ AND STR_TO_DATE('$to_date','%d-%m-%Y')";
 
                                         // display rows
                                         $overall = 0;
-                                        $overall_qty = 0;
 
                                         foreach ($data as $shop_name => $row) {
                                             $gt = 0;
-                                            $gqty = 0;
                                             ?>
 
                                             <tr>
@@ -178,25 +166,19 @@ AND STR_TO_DATE('$to_date','%d-%m-%Y')";
                                                 foreach ($serv_array as $sid) {
 
                                                     $val = $row["s_$sid"] ?? 0;
-                                                    $qty = $row["q_$sid"] ?? 0;
                                                     $serv_total_array[$i] += $val;
-                                                    $serv_qty_array[$i] += $qty;
                                                     $gt += $val;
-                                                    $gqty += $qty;
                                                     ?>
 
-                                                    <td><?= $qty ?></td>
                                                     <td><?= $val ?></td>
 
                                                     <?php $i++;
                                                 } ?>
 
-                                                <td><?= $gqty ?></td>
                                                 <td><?= $gt ?></td>
                                             </tr>
 
                                             <?php $overall += $gt;
-                                            $overall_qty += $gqty;
                                         } ?>
 
                                         <tr>
@@ -204,11 +186,9 @@ AND STR_TO_DATE('$to_date','%d-%m-%Y')";
                                             <?php
                                             $i = 0;
                                             foreach ($serv_array as $sid) { ?>
-                                                <td><?= $serv_qty_array[$i] ?></td>
                                                 <td><?= $serv_total_array[$i] ?></td>
                                                 <?php $i++;
                                             } ?>
-                                            <td><?= $overall_qty ?></td>
                                             <td><?= $overall ?></td>
                                         </tr>
 

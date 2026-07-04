@@ -302,6 +302,11 @@ function loadGenericTable() {
             orderable: false,
             render: function (data, type, row) {
                 var id = row[Object.keys(row)[0]];
+                var extraBtns = '';
+                if (module === 'customer') {
+                    extraBtns = '<a class="btn btn-sm" href="attach_gst.php?customer_id=' + id + '" title="Attach GST" style="color:#17a2b8;background:none;border:none;font-size:16px;padding:2px 6px;"><i class="fas fa-file-invoice-dollar"></i></a>' + 
+                                '<a class="btn btn-sm" href="attach_address.php?customer_id=' + id + '" title="Attach Address" style="color:#17a2b8;background:none;border:none;font-size:16px;padding:2px 6px;"><i class="fas fa-map-marker-alt"></i></a>';
+                }
                 return '<div style="white-space:nowrap;">'
                      + '<button class="btn btn-sm" onclick="editFunction(' + id + ')" '
                      + 'title="Edit" style="color:#f6a800;background:none;border:none;font-size:16px;padding:2px 6px;">'
@@ -309,6 +314,7 @@ function loadGenericTable() {
                      + '<button class="btn btn-sm" onclick="delFunction(' + id + ')" '
                      + 'title="Delete" style="color:#e74c3c;background:none;border:none;font-size:16px;padding:2px 6px;">'
                      + '<i class="fas fa-trash-alt"></i></button>'
+                     + extraBtns
                      + '</div>';
             }
         });
